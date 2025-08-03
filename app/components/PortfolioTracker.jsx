@@ -1,29 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useUserData } from "../hooks/useUserData";
+import PortfolioSummary from "./PortfolioSummary";
 
-export default function PortfolioTracker() {
-  const [stocks, setStocks] = useState([]);
+export default function PortfolioTracker({ userId }) {
+  const {
+    portfolio: stocks,
+    loading,
+    error,
+    addStock,
+    removeStock,
+    updateStockPrices,
+  } = useUserData(userId);
   const [newStock, setNewStock] = useState({
     symbol: "",
     quantity: "",
     buyPrice: "",
   });
-  const [loading, setLoading] = useState(false);
-
-  // ⏫ Load from localStorage on mount and refresh prices
-  useEffect(() => {
-    const saved = localStorage.getItem("egxPortfolio");
-    if (!saved) return;
-
-    const savedStocks = JSON.parse(saved);
-    refreshSavedStockPrices(savedStocks);
-  }, []);
-
-  // 💾 Save to localStorage on stock list change
-  useEffect(() => {
-    localStorage.setItem("egxPortfolio", JSON.stringify(stocks));
-  }, [stocks]);
+  const [addingStock, setAddingStock] = useState(false);
 
   // 📡 Fetch prices and update saved stocks
   const refreshSavedStockPrices = async (savedStocks) => {
@@ -45,7 +40,7 @@ export default function PortfolioTracker() {
         };
       })
     );
-    setStocks(updated);
+    updateStockPrices(updated);
   };
 
   // 🔍 Get current price from Investing.com
@@ -76,13 +71,13 @@ export default function PortfolioTracker() {
     const { symbol, quantity, buyPrice } = newStock;
     if (!symbol || !quantity || !buyPrice) return;
 
-    setLoading(true);
+    setAddingStock(true);
     const upperSymbol = symbol.toUpperCase();
     const currentPrice = await fetchStockPrice(upperSymbol);
 
     if (!currentPrice) {
       alert("Invalid symbol or data unavailable");
-      setLoading(false);
+      setAddingStock(false);
       return;
     }
 
@@ -103,120 +98,288 @@ export default function PortfolioTracker() {
       profitPercent,
     };
 
-    setStocks((prev) => [...prev, stockData]);
+    await addStock(stockData);
     setNewStock({ symbol: "", quantity: "", buyPrice: "" });
-    setLoading(false);
-  };
-
-  // ❌ Remove a stock
-  const removeStock = (id) => {
-    setStocks(stocks.filter((stock) => stock.id !== id));
+    setAddingStock(false);
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">📊 My EGX Portfolio</h1>
-
-      {/* Input Form */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        <input
-          type="text"
-          placeholder="Symbol (e.g. COMI)"
-          value={newStock.symbol}
-          onChange={(e) => setNewStock({ ...newStock, symbol: e.target.value })}
-          className="border p-2"
-        />
-        <input
-          type="number"
-          placeholder="Quantity"
-          value={newStock.quantity}
-          onChange={(e) =>
-            setNewStock({ ...newStock, quantity: e.target.value })
-          }
-          className="border p-2"
-        />
-        <input
-          type="number"
-          placeholder="Buy Price"
-          value={newStock.buyPrice}
-          onChange={(e) =>
-            setNewStock({ ...newStock, buyPrice: e.target.value })
-          }
-          className="border p-2"
-        />
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold">📊 My EGX Portfolio</h2>
       </div>
 
-      <div className="flex gap-4 mb-6">
+      <PortfolioSummary stocks={stocks} />
+
+      {/* Input Form */}
+      <div className="bg-muted/50 rounded-lg p-4 mb-6">
+        <h3 className="text-sm font-medium mb-3">Add New Stock</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">
+              Symbol
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. COMI"
+              value={newStock.symbol}
+              onChange={(e) =>
+                setNewStock({ ...newStock, symbol: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">
+              Quantity
+            </label>
+            <input
+              type="number"
+              placeholder="Number of shares"
+              value={newStock.quantity}
+              onChange={(e) =>
+                setNewStock({ ...newStock, quantity: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">
+              Buy Price (EGP)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              placeholder="Price per share"
+              value={newStock.buyPrice}
+              onChange={(e) =>
+                setNewStock({ ...newStock, buyPrice: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+            />
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          Error: {error}
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-3 mb-6">
         <button
           onClick={handleAddStock}
-          disabled={loading}
-          className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+          disabled={addingStock || loading}
+          className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {loading ? "Adding..." : "Add Stock"}
+          {addingStock ? (
+            <>
+              <svg
+                className="animate-spin -ml-1 mr-2 h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Adding...
+            </>
+          ) : (
+            <>
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+              Add Stock
+            </>
+          )}
         </button>
 
         <button
           onClick={() => refreshSavedStockPrices(stocks)}
           disabled={loading || stocks.length === 0}
-          className="bg-yellow-500 text-white py-2 px-4 rounded hover:bg-yellow-600"
+          className="inline-flex items-center px-4 py-2 bg-secondary text-secondary-foreground rounded-md text-sm font-medium hover:bg-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {loading ? "Refreshing..." : "🔄 Refresh Prices"}
+          {loading ? (
+            <>
+              <svg
+                className="animate-spin -ml-1 mr-2 h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Refreshing...
+            </>
+          ) : (
+            <>
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              Refresh Prices
+            </>
+          )}
         </button>
       </div>
 
       {/* Stock Table */}
-      <table className="w-full text-sm border">
-        <thead className="bg-background">
-          <tr>
-            <th className="p-2">Symbol</th>
-            <th>Qty</th>
-            <th>Buy</th>
-            <th>Now</th>
-            <th>P/L</th>
-            <th>%</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {stocks.map((stock) => (
-            <tr key={stock.id} className="border-t text-center">
-              <td className="p-2 font-semibold">{stock.symbol}</td>
-              <td>{stock.quantity}</td>
-              <td>{stock.buyPrice.toFixed(2)}</td>
-              <td>{stock.currentPrice?.toFixed(2)}</td>
-              <td
-                className={
-                  stock.profit >= 0 ? "text-green-600" : "text-red-600"
-                }
-              >
-                {stock.profit.toFixed(2)} EGP
-              </td>
-              <td
-                className={
-                  stock.profit >= 0 ? "text-green-600" : "text-red-600"
-                }
-              >
-                {stock.profitPercent.toFixed(2)}%
-              </td>
-              <td>
-                <button
-                  onClick={() => removeStock(stock.id)}
-                  className="text-red-500 hover:underline"
-                >
-                  ❌
-                </button>
-              </td>
-            </tr>
-          ))}
-          {stocks.length === 0 && (
+      <div className="overflow-hidden rounded-lg border">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50">
             <tr>
-              <td colSpan="7" className="text-center text-gray-500 p-4">
-                No stocks added yet.
-              </td>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                Symbol
+              </th>
+              <th className="px-4 py-3 text-right font-medium text-muted-foreground">
+                Quantity
+              </th>
+              <th className="px-4 py-3 text-right font-medium text-muted-foreground">
+                Buy Price
+              </th>
+              <th className="px-4 py-3 text-right font-medium text-muted-foreground">
+                Current Price
+              </th>
+              <th className="px-4 py-3 text-right font-medium text-muted-foreground">
+                P/L
+              </th>
+              <th className="px-4 py-3 text-right font-medium text-muted-foreground">
+                %
+              </th>
+              <th className="px-4 py-3 text-center font-medium text-muted-foreground">
+                Actions
+              </th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y">
+            {stocks.map((stock) => (
+              <tr
+                key={stock.id}
+                className="hover:bg-muted/30 transition-colors"
+              >
+                <td className="px-4 py-3 font-semibold">{stock.symbol}</td>
+                <td className="px-4 py-3 text-right">
+                  {stock.quantity.toLocaleString()}
+                </td>
+                <td className="px-4 py-3 text-right">
+                  {stock.buyPrice.toFixed(2)} EGP
+                </td>
+                <td className="px-4 py-3 text-right">
+                  {stock.currentPrice?.toFixed(2)} EGP
+                </td>
+                <td
+                  className={`px-4 py-3 text-right font-medium ${
+                    stock.profit >= 0 ? "text-green-600" : "text-red-600"
+                  }`}
+                >
+                  {stock.profit >= 0 ? "+" : ""}
+                  {stock.profit.toFixed(2)} EGP
+                </td>
+                <td
+                  className={`px-4 py-3 text-right font-medium ${
+                    stock.profit >= 0 ? "text-green-600" : "text-red-600"
+                  }`}
+                >
+                  {stock.profit >= 0 ? "+" : ""}
+                  {stock.profitPercent.toFixed(2)}%
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <button
+                    onClick={() => removeStock(stock.id)}
+                    className="inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    disabled={loading}
+                    title="Remove stock"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {stocks.length === 0 && (
+              <tr>
+                <td
+                  colSpan="7"
+                  className="px-4 py-8 text-center text-muted-foreground"
+                >
+                  <div className="flex flex-col items-center space-y-2">
+                    <svg
+                      className="w-12 h-12 text-muted-foreground/50"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1}
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      />
+                    </svg>
+                    <p className="text-sm">No stocks added yet.</p>
+                    <p className="text-xs text-muted-foreground">
+                      Add your first stock to start tracking your portfolio.
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

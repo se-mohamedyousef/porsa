@@ -1,9 +1,115 @@
+"use client";
+
 import PortfolioTracker from "./components/PortfolioTracker";
+import LoginForm from "./components/LoginForm";
+import { useUserData } from "./hooks/useUserData";
+import { useState, useEffect } from "react";
 
 export default function Home() {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Check for existing user session on mount
+  useEffect(() => {
+    const savedUser = localStorage.getItem("porsaCurrentUser");
+    if (savedUser) {
+      try {
+        setCurrentUser(JSON.parse(savedUser));
+      } catch (error) {
+        console.error("Error loading user session:", error);
+        localStorage.removeItem("porsaCurrentUser");
+      }
+    }
+    setIsLoading(false);
+  }, []);
+
+  const handleLogin = (user: any) => {
+    setCurrentUser(user);
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem("porsaCurrentUser");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
+            <span className="text-primary-foreground font-bold text-sm">P</span>
+          </div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return <LoginForm onLogin={handleLogin} />;
+  }
+
   return (
-    <main className="min-h-screen p-6 bg-background">
-      <PortfolioTracker />
-    </main>
+    <div className="min-h-screen bg-background">
+      <Header currentUser={currentUser} onLogout={handleLogout} />
+      <main className="container mx-auto px-4 py-8">
+        <Dashboard currentUser={currentUser} />
+      </main>
+    </div>
+  );
+}
+
+function Header({
+  currentUser,
+  onLogout,
+}: {
+  currentUser: any;
+  onLogout: () => void;
+}) {
+  return (
+    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-blur]:bg-background/60">
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-sm">
+                P
+              </span>
+            </div>
+            <h1 className="text-xl font-bold">Porsa</h1>
+          </div>
+          <div className="flex items-center space-x-4">
+            {currentUser && (
+              <div className="flex items-center space-x-4">
+                <div className="text-sm text-muted-foreground">
+                  👤 {currentUser.name || currentUser.phone}
+                </div>
+                <button
+                  onClick={onLogout}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+            <div className="text-sm text-muted-foreground">
+              EGX Portfolio Tracker
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function Dashboard({ currentUser }: { currentUser: any }) {
+  const { userProfile, saveUserProfile } = useUserData(currentUser?.id);
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-background border rounded-lg shadow-sm">
+        <PortfolioTracker userId={currentUser?.id} />
+      </div>
+    </div>
   );
 }
