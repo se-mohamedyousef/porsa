@@ -138,12 +138,6 @@ porsa/
 4. Click "Save" to store your information
 5. Your profile data is saved to your specific user account
 
-### Using the Calculator
-
-1. Navigate to the **Calculator** tab
-2. Enter stock details (symbol, quantity, buy price)
-3. Click "Calculate Profit/Loss" to see results
-
 ### Managing Your Portfolio
 
 - **Refresh Prices**: Click the refresh button to update all stock prices
