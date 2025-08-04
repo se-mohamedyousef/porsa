@@ -104,17 +104,17 @@ export default function PortfolioTracker({ userId }) {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">📊 My EGX Portfolio</h2>
+    <div className="p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-2">
+        <h2 className="text-xl sm:text-2xl font-bold">📊 My EGX Portfolio</h2>
       </div>
 
       <PortfolioSummary stocks={stocks} />
 
       {/* Input Form */}
-      <div className="bg-muted/50 rounded-lg p-4 mb-6">
+      <div className="bg-muted/50 rounded-lg p-3 sm:p-4 mb-6">
         <h3 className="text-sm font-medium mb-3">Add New Stock</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1">
               Symbol
@@ -167,11 +167,11 @@ export default function PortfolioTracker({ userId }) {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-6">
         <button
           onClick={handleAddStock}
           disabled={addingStock || loading}
-          className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {addingStock ? (
             <>
@@ -219,7 +219,7 @@ export default function PortfolioTracker({ userId }) {
         <button
           onClick={() => refreshSavedStockPrices(stocks)}
           disabled={loading || stocks.length === 0}
-          className="inline-flex items-center px-4 py-2 bg-secondary text-secondary-foreground rounded-md text-sm font-medium hover:bg-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex items-center justify-center px-4 py-2 bg-secondary text-secondary-foreground rounded-md text-sm font-medium hover:bg-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? (
             <>
@@ -266,29 +266,29 @@ export default function PortfolioTracker({ userId }) {
       </div>
 
       {/* Stock Table */}
-      <div className="overflow-hidden rounded-lg border">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-lg border">
+        <table className="w-full text-xs sm:text-sm min-w-[600px]">
           <thead className="bg-muted/50">
             <tr>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+              <th className="px-2 sm:px-4 py-2 sm:py-3 text-left font-medium text-muted-foreground">
                 Symbol
               </th>
-              <th className="px-4 py-3 text-right font-medium text-muted-foreground">
+              <th className="px-2 sm:px-4 py-2 sm:py-3 text-right font-medium text-muted-foreground">
                 Quantity
               </th>
-              <th className="px-4 py-3 text-right font-medium text-muted-foreground">
+              <th className="px-2 sm:px-4 py-2 sm:py-3 text-right font-medium text-muted-foreground">
                 Buy Price
               </th>
-              <th className="px-4 py-3 text-right font-medium text-muted-foreground">
+              <th className="px-2 sm:px-4 py-2 sm:py-3 text-right font-medium text-muted-foreground">
                 Current Price
               </th>
-              <th className="px-4 py-3 text-right font-medium text-muted-foreground">
+              <th className="px-2 sm:px-4 py-2 sm:py-3 text-right font-medium text-muted-foreground">
                 P/L
               </th>
-              <th className="px-4 py-3 text-right font-medium text-muted-foreground">
+              <th className="px-2 sm:px-4 py-2 sm:py-3 text-right font-medium text-muted-foreground">
                 %
               </th>
-              <th className="px-4 py-3 text-center font-medium text-muted-foreground">
+              <th className="px-2 sm:px-4 py-2 sm:py-3 text-center font-medium text-muted-foreground">
                 Actions
               </th>
             </tr>
@@ -299,18 +299,20 @@ export default function PortfolioTracker({ userId }) {
                 key={stock.id}
                 className="hover:bg-muted/30 transition-colors"
               >
-                <td className="px-4 py-3 font-semibold">{stock.symbol}</td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold">
+                  {stock.symbol}
+                </td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
                   {stock.quantity.toLocaleString()}
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
                   {stock.buyPrice.toFixed(2)} EGP
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
                   {stock.currentPrice?.toFixed(2)} EGP
                 </td>
                 <td
-                  className={`px-4 py-3 text-right font-medium ${
+                  className={`px-2 sm:px-4 py-2 sm:py-3 text-right font-medium ${
                     stock.profit >= 0 ? "text-green-600" : "text-red-600"
                   }`}
                 >
@@ -318,14 +320,14 @@ export default function PortfolioTracker({ userId }) {
                   {stock.profit.toFixed(2)} EGP
                 </td>
                 <td
-                  className={`px-4 py-3 text-right font-medium ${
+                  className={`px-2 sm:px-4 py-2 sm:py-3 text-right font-medium ${
                     stock.profit >= 0 ? "text-green-600" : "text-red-600"
                   }`}
                 >
                   {stock.profit >= 0 ? "+" : ""}
                   {stock.profitPercent.toFixed(2)}%
                 </td>
-                <td className="px-4 py-3 text-center">
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                   <button
                     onClick={() => removeStock(stock.id)}
                     className="inline-flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
@@ -353,7 +355,7 @@ export default function PortfolioTracker({ userId }) {
               <tr>
                 <td
                   colSpan="7"
-                  className="px-4 py-8 text-center text-muted-foreground"
+                  className="px-2 sm:px-4 py-8 text-center text-muted-foreground"
                 >
                   <div className="flex flex-col items-center space-y-2">
                     <svg

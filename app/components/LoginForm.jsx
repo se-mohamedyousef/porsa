@@ -77,28 +77,28 @@ export default function LoginForm({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="max-w-md w-full space-y-8 p-8">
+    <div className="min-h-screen flex items-center justify-center bg-background px-2 sm:px-0">
+      <div className="w-full max-w-md sm:max-w-md space-y-8 p-4 sm:p-8 bg-white/90 rounded-lg shadow-md border border-border">
         <div className="text-center">
-          <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
-            <span className="text-primary-foreground font-bold text-2xl">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
+            <span className="text-primary-foreground font-bold text-xl sm:text-2xl">
               P
             </span>
           </div>
-          <h2 className="text-3xl font-bold text-foreground">
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
             {isLogin ? "Welcome Back" : "Create Account"}
           </h2>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
             {isLogin
               ? "Sign in to your account"
               : "Join Porsa to track your portfolio"}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
           {!isLogin && (
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-muted-foreground mb-2">
                 Full Name
               </label>
               <input
@@ -107,27 +107,29 @@ export default function LoginForm({ onLogin }) {
                 placeholder="Your full name"
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
-                className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                className="w-full px-3 py-2 border border-input bg-background rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-2">
-              phone
+            <label className="block text-xs sm:text-sm font-medium text-muted-foreground mb-2">
+              Phone
             </label>
             <input
               type="phone"
               required
-              placeholder="phone"
+              placeholder="Phone"
               value={formData.phone}
               onChange={(e) => handleInputChange("phone", e.target.value)}
-              className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+              className="w-full px-3 py-2 border border-input bg-background rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+              inputMode="tel"
+              autoComplete="tel"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-muted-foreground mb-2">
               Password
             </label>
             <input
@@ -136,12 +138,13 @@ export default function LoginForm({ onLogin }) {
               placeholder="Your password"
               value={formData.password}
               onChange={(e) => handleInputChange("password", e.target.value)}
-              className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+              className="w-full px-3 py-2 border border-input bg-background rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+              autoComplete={isLogin ? "current-password" : "new-password"}
             />
           </div>
 
           {error && (
-            <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+            <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-xs sm:text-sm">
               {error}
             </div>
           )}
@@ -149,7 +152,7 @@ export default function LoginForm({ onLogin }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md text-xs sm:text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? (
               <>
@@ -185,7 +188,7 @@ export default function LoginForm({ onLogin }) {
         <div className="text-center">
           <button
             onClick={() => setIsLogin(!isLogin)}
-            className="text-sm text-primary hover:underline"
+            className="text-xs sm:text-sm text-primary hover:underline mt-2"
           >
             {isLogin
               ? "Don't have an account? Sign up"

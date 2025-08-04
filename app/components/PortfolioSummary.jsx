@@ -34,19 +34,21 @@ export default function PortfolioSummary({ stocks }) {
   if (!summary) return null;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div className="bg-background border rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">Total Invested</p>
-            <p className="text-2xl font-bold">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="bg-background border rounded-lg p-4 flex flex-col justify-between h-full min-w-0">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="min-w-0">
+            <p className="text-xs sm:text-sm text-muted-foreground truncate">
+              Total Invested
+            </p>
+            <p className="text-xl sm:text-2xl font-bold truncate">
               {summary.totalInvested.toLocaleString("en-US", {
                 style: "currency",
                 currency: "EGP",
               })}
             </p>
           </div>
-          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
             <svg
               className="w-4 h-4 text-blue-600"
               fill="none"
@@ -64,18 +66,20 @@ export default function PortfolioSummary({ stocks }) {
         </div>
       </div>
 
-      <div className="bg-background border rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">Current Value</p>
-            <p className="text-2xl font-bold">
+      <div className="bg-background border rounded-lg p-4 flex flex-col justify-between h-full min-w-0">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="min-w-0">
+            <p className="text-xs sm:text-sm text-muted-foreground truncate">
+              Current Value
+            </p>
+            <p className="text-xl sm:text-2xl font-bold truncate">
               {summary.totalCurrentValue.toLocaleString("en-US", {
                 style: "currency",
                 currency: "EGP",
               })}
             </p>
           </div>
-          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
             <svg
               className="w-4 h-4 text-green-600"
               fill="none"
@@ -93,12 +97,14 @@ export default function PortfolioSummary({ stocks }) {
         </div>
       </div>
 
-      <div className="bg-background border rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">Total P/L</p>
+      <div className="bg-background border rounded-lg p-4 flex flex-col justify-between h-full min-w-0">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="min-w-0">
+            <p className="text-xs sm:text-sm text-muted-foreground truncate">
+              Total P/L
+            </p>
             <p
-              className={`text-2xl font-bold ${
+              className={`text-xl sm:text-2xl font-bold truncate ${
                 summary.totalProfit >= 0 ? "text-green-600" : "text-red-600"
               }`}
             >
@@ -109,7 +115,7 @@ export default function PortfolioSummary({ stocks }) {
               })}
             </p>
             <p
-              className={`text-sm ${
+              className={`text-xs sm:text-sm ${
                 summary.totalProfitPercent >= 0
                   ? "text-green-600"
                   : "text-red-600"
@@ -120,7 +126,7 @@ export default function PortfolioSummary({ stocks }) {
             </p>
           </div>
           <div
-            className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+            className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
               summary.totalProfit >= 0 ? "bg-green-100" : "bg-red-100"
             }`}
           >
@@ -152,17 +158,21 @@ export default function PortfolioSummary({ stocks }) {
         </div>
       </div>
 
-      <div className="bg-background border rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">Portfolio</p>
-            <p className="text-2xl font-bold">{summary.totalStocks} stocks</p>
-            <p className="text-sm text-muted-foreground">
+      <div className="bg-background border rounded-lg p-4 flex flex-col justify-between h-full min-w-0">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="min-w-0">
+            <p className="text-xs sm:text-sm text-muted-foreground truncate">
+              Portfolio
+            </p>
+            <p className="text-xl sm:text-2xl font-bold truncate">
+              {summary.totalStocks} stocks
+            </p>
+            <p className="text-xs sm:text-sm text-muted-foreground truncate">
               {summary.profitableStocks} profitable, {summary.losingStocks}{" "}
               losing
             </p>
           </div>
-          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
             <svg
               className="w-4 h-4 text-purple-600"
               fill="none"

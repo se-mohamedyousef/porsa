@@ -46,21 +46,26 @@ export default function PhoneNumberInput({
   };
 
   return (
-    <div>
-      <label className="block text-xs font-medium text-muted-foreground mb-1">
+    <div className="w-full max-w-full sm:max-w-md mx-auto">
+      <label className="block text-xs sm:text-sm font-medium text-muted-foreground mb-1">
         Phone Number
       </label>
       <input
         type="tel"
-        placeholder="e.g. 010-123-4567"
+        inputMode="tel"
+        autoComplete="tel"
+        placeholder={placeholder || "e.g. 010-123-4567"}
         value={value}
         onChange={handleChange}
-        className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent ${
+        className={`w-full px-3 py-2 border rounded-md text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent ${
           isValid ? "border-input bg-background" : "border-red-500 bg-red-50"
-        }`}
+        } transition-colors`}
+        style={{
+          fontSize: "16px", // Ensures iOS zooms less on input
+        }}
       />
       {!isValid && value && (
-        <p className="text-xs text-red-500 mt-1">
+        <p className="text-xs sm:text-sm text-red-500 mt-1">
           Please enter a valid Egyptian phone number (10-11 digits)
         </p>
       )}

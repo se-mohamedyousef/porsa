@@ -2,6 +2,14 @@
 
 import { useEffect } from "react";
 
+function isMobile() {
+  // Basic check for mobile devices
+  if (typeof window === "undefined") return false;
+  return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    window.navigator.userAgent
+  );
+}
+
 export default function KeyboardShortcuts({
   onAddStock,
   onRefreshPrices,
@@ -9,6 +17,11 @@ export default function KeyboardShortcuts({
   activeTab,
 }) {
   useEffect(() => {
+    if (isMobile()) {
+      // Don't register keyboard shortcuts on mobile devices
+      return;
+    }
+
     const handleKeyDown = (event) => {
       // Ctrl/Cmd + Enter to add stock
       if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {

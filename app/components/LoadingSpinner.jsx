@@ -1,13 +1,20 @@
 export default function LoadingSpinner({ size = "md", className = "" }) {
+  // Responsive size classes for mobile and up
   const sizeClasses = {
-    sm: "w-4 h-4",
-    md: "w-6 h-6",
-    lg: "w-8 h-8",
-    xl: "w-12 h-12",
+    sm: "w-4 h-4 sm:w-4 sm:h-4",
+    md: "w-6 h-6 sm:w-6 sm:h-6",
+    lg: "w-8 h-8 sm:w-8 sm:h-8",
+    xl: "w-10 h-10 sm:w-12 sm:h-12", // slightly smaller on mobile
   };
 
+  // Optionally, allow size to be responsive based on screen size
+  // e.g., md: "w-6 h-6 sm:w-8 sm:h-8" for larger spinner on desktop
+
   return (
-    <div className={`inline-flex items-center justify-center ${className}`}>
+    <div
+      className={`inline-flex items-center justify-center ${className}`}
+      style={{ minWidth: 0, minHeight: 0 }}
+    >
       <svg
         className={`animate-spin ${sizeClasses[size]}`}
         fill="none"
