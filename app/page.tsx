@@ -5,6 +5,9 @@ import LoginForm from "./components/LoginForm";
 import { useUserData } from "./hooks/useUserData";
 import { useState, useEffect } from "react";
 
+// Responsive container max width for desktop, tablet, and mobile
+const CONTAINER_MAX_WIDTH = "max-w-7xl"; // wider for desktop
+
 export default function Home() {
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,25 +37,37 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
-            <span className="text-primary-foreground font-bold text-sm">P</span>
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="text-center w-full max-w-xs mx-auto">
+          <div className="w-12 h-12 sm:w-8 sm:h-8 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
+            <span className="text-primary-foreground font-bold text-lg sm:text-sm">
+              P
+            </span>
           </div>
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground text-base sm:text-sm">
+            Loading...
+          </p>
         </div>
       </div>
     );
   }
 
   if (!currentUser) {
-    return <LoginForm onLogin={handleLogin} />;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-2">
+        <div className="w-full max-w-sm">
+          <LoginForm onLogin={handleLogin} />
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header currentUser={currentUser} onLogout={handleLogout} />
-      <main className="flex-1 w-full max-w-3xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
+      <main
+        className={`flex-1 w-full ${CONTAINER_MAX_WIDTH} mx-auto px-2 md:px-6 lg:px-8 py-4 md:py-8`}
+      >
         <Dashboard currentUser={currentUser} />
       </main>
     </div>
@@ -67,21 +82,23 @@ function Header({
   onLogout: () => void;
 }) {
   return (
-    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-blur]:bg-background/60">
-      <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0">
-          <div className="flex items-center space-x-2">
+    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-blur]:bg-background/60 w-full">
+      <div
+        className={`w-full ${CONTAINER_MAX_WIDTH} mx-auto px-2 md:px-6 lg:px-8 py-3 md:py-4`}
+      >
+        <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-0 w-full">
+          <div className="flex items-center space-x-2 w-full md:w-auto justify-center md:justify-start">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-sm">
                 P
               </span>
             </div>
-            <h1 className="text-lg sm:text-xl font-bold">Porsa</h1>
+            <h1 className="text-lg md:text-2xl font-bold">Porsa</h1>
           </div>
-          <div className="flex flex-col sm:flex-row items-center sm:space-x-4 space-y-1 sm:space-y-0 mt-2 sm:mt-0 w-full sm:w-auto">
+          <div className="flex flex-col md:flex-row items-center md:space-x-4 space-y-1 md:space-y-0 mt-2 md:mt-0 w-full md:w-auto">
             {currentUser && (
-              <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto">
-                <div className="text-sm text-muted-foreground truncate max-w-[120px] sm:max-w-none">
+              <div className="flex items-center space-x-2 md:space-x-4 w-full md:w-auto justify-center md:justify-end">
+                <div className="text-sm text-muted-foreground truncate max-w-[120px] md:max-w-none">
                   👤 {currentUser.name || currentUser.phone}
                 </div>
                 <button
@@ -92,7 +109,7 @@ function Header({
                 </button>
               </div>
             )}
-            <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left w-full sm:w-auto">
+            <div className="text-xs md:text-sm text-muted-foreground text-center md:text-left w-full md:w-auto">
               EGX Portfolio Tracker
             </div>
           </div>
@@ -103,11 +120,9 @@ function Header({
 }
 
 function Dashboard({ currentUser }: { currentUser: any }) {
-  const { userProfile, saveUserProfile } = useUserData(currentUser?.id);
-
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="bg-background border rounded-lg shadow-sm p-2 sm:p-4">
+    <div className="space-y-4 md:space-y-6 w-full">
+      <div className="bg-background border rounded-lg shadow-sm p-2 md:p-6 w-full">
         <PortfolioTracker userId={currentUser?.id} />
       </div>
     </div>
