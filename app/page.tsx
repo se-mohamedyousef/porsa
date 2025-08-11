@@ -7,8 +7,16 @@ import { useState, useEffect } from "react";
 // Responsive container max width for desktop, tablet, and mobile
 const CONTAINER_MAX_WIDTH = "max-w-7xl"; // wider for desktop
 
+// Define a type for the user object to avoid 'never' type errors
+type User = {
+  id?: string;
+  name?: string;
+  phone?: string;
+  [key: string]: any;
+};
+
 export default function Home() {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [aiRecommendation, setAiRecommendation] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -32,7 +40,7 @@ export default function Home() {
     setIsLoading(false);
   }, []);
 
-  const handleLogin = (user: any) => {
+  const handleLogin = (user: User) => {
     setCurrentUser(user);
   };
 
@@ -102,14 +110,13 @@ export default function Home() {
 
   // New: Analyze my stocks button handler
   async function handleAnalyzeMyStocks() {
-    console.log("🚀 ~ handleAnalyzeMyStocks ~ currentUser:", currentUser);
-    if (!currentUser?.id) return;
+    if (!currentUser || !currentUser.id) return;
     setMyStocksLoading(true);
     setMyStocksRecommendation(null);
 
     try {
       // Fetch user's stocks from backend API (assuming /api/portfolio?userId=...)
-      const res = await fetch(`/api/portfolio?userId=${currentUser?.id}`);
+      const res = await fetch(`/api/portfolio?userId=${currentUser.id}`);
       if (!res.ok) throw new Error("Failed to fetch your portfolio.");
       const userStocks = await res.json();
 
@@ -205,7 +212,7 @@ function Header({
   currentUser,
   onLogout,
 }: {
-  currentUser: any;
+  currentUser: User;
   onLogout: () => void;
 }) {
   return (
@@ -257,7 +264,7 @@ function Dashboard({
   myStocksRecommendation,
   onAnalyzeMyStocks,
 }: {
-  currentUser: any;
+  currentUser: User;
   aiRecommendation: string | null;
   aiLoading: boolean;
   onAskAi: (type?: "egx30" | "egx70" | "all") => void;
