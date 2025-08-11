@@ -19,28 +19,34 @@ export default function PortfolioTracker({ userId }) {
     buyPrice: "",
   });
   const [addingStock, setAddingStock] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // 📡 Fetch prices and update saved stocks
   const refreshSavedStockPrices = async (savedStocks) => {
-    const updated = await Promise.all(
-      savedStocks.map(async (s) => {
-        const currentPrice = await fetchStockPrice(s.symbol);
-        if (!currentPrice) return s;
+    setRefreshing(true);
+    try {
+      const updated = await Promise.all(
+        savedStocks.map(async (s) => {
+          const currentPrice = await fetchStockPrice(s.symbol);
+          if (!currentPrice) return s;
 
-        const invested = s.buyPrice * s.quantity;
-        const currentValue = currentPrice * s.quantity;
-        const profit = currentValue - invested;
-        const profitPercent = (profit / invested) * 100;
+          const invested = s.buyPrice * s.quantity;
+          const currentValue = currentPrice * s.quantity;
+          const profit = currentValue - invested;
+          const profitPercent = (profit / invested) * 100;
 
-        return {
-          ...s,
-          currentPrice,
-          profit,
-          profitPercent,
-        };
-      })
-    );
-    updateStockPrices(updated);
+          return {
+            ...s,
+            currentPrice,
+            profit,
+            profitPercent,
+          };
+        })
+      );
+      updateStockPrices(updated);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   // 🔍 Get current price from Investing.com
@@ -218,10 +224,10 @@ export default function PortfolioTracker({ userId }) {
 
         <button
           onClick={() => refreshSavedStockPrices(stocks)}
-          disabled={loading || stocks.length === 0}
+          disabled={refreshing || loading || stocks.length === 0}
           className="inline-flex items-center justify-center px-4 py-2 bg-secondary text-secondary-foreground rounded-md text-sm font-medium hover:bg-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {loading ? (
+          {refreshing ? (
             <>
               <svg
                 className="animate-spin -ml-1 mr-2 h-4 w-4"
