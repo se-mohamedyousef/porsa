@@ -26,6 +26,11 @@ export default function Home() {
     string | null
   >(null);
 
+  // Track which button is currently clicked
+  const [currentClickedButton, setCurrentClickedButton] = useState<
+    "egx30" | "egx70" | "all" | "myStocks" | null
+  >(null);
+
   // Check for existing user session on mount
   useEffect(() => {
     const savedUser = localStorage.getItem("porsaCurrentUser");
@@ -50,6 +55,7 @@ export default function Home() {
   };
 
   async function handleAsk(type: "egx30" | "egx70" | "all" = aiType) {
+    setCurrentClickedButton(type);
     setAiLoading(true);
     setAiRecommendation(null);
 
@@ -105,11 +111,13 @@ export default function Home() {
       setAiRecommendation("Failed to fetch recommendation.");
     } finally {
       setAiLoading(false);
+      setCurrentClickedButton(null);
     }
   }
 
   // New: Analyze my stocks button handler
   async function handleAnalyzeMyStocks() {
+    setCurrentClickedButton("myStocks");
     if (!currentUser || !currentUser.id) return;
     setMyStocksLoading(true);
     setMyStocksRecommendation(null);
@@ -156,6 +164,7 @@ export default function Home() {
       setMyStocksRecommendation("Failed to analyze your portfolio.");
     } finally {
       setMyStocksLoading(false);
+      setCurrentClickedButton(null);
     }
   }
 
@@ -202,6 +211,7 @@ export default function Home() {
           myStocksLoading={myStocksLoading}
           myStocksRecommendation={myStocksRecommendation}
           onAnalyzeMyStocks={handleAnalyzeMyStocks}
+          currentClickedButton={currentClickedButton}
         />
       </main>
     </div>
@@ -263,6 +273,7 @@ function Dashboard({
   myStocksLoading,
   myStocksRecommendation,
   onAnalyzeMyStocks,
+  currentClickedButton,
 }: {
   currentUser: User;
   aiRecommendation: string | null;
@@ -273,6 +284,7 @@ function Dashboard({
   myStocksLoading: boolean;
   myStocksRecommendation: string | null;
   onAnalyzeMyStocks: () => void;
+  currentClickedButton: "egx30" | "egx70" | "all" | "myStocks" | null;
 }) {
   return (
     <div className="space-y-4 md:space-y-6 w-full">
@@ -288,13 +300,16 @@ function Dashboard({
                 onAskAi("egx30");
               }}
               className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                aiType === "egx30"
+                aiType === "egx30" || currentClickedButton === "egx30"
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
               } disabled:opacity-50 disabled:cursor-not-allowed`}
               disabled={aiLoading}
+              data-selected={
+                currentClickedButton === "egx30" ? "true" : undefined
+              }
             >
-              {aiLoading && aiType === "egx30"
+              {aiLoading && currentClickedButton === "egx30"
                 ? "Getting EGX30 Recommendation..."
                 : "Ask AI for EGX30"}
             </button>
@@ -304,13 +319,16 @@ function Dashboard({
                 onAskAi("egx70");
               }}
               className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                aiType === "egx70"
+                aiType === "egx70" || currentClickedButton === "egx70"
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
               } disabled:opacity-50 disabled:cursor-not-allowed`}
               disabled={aiLoading}
+              data-selected={
+                currentClickedButton === "egx70" ? "true" : undefined
+              }
             >
-              {aiLoading && aiType === "egx70"
+              {aiLoading && currentClickedButton === "egx70"
                 ? "Getting EGX70 Recommendation..."
                 : "Ask AI for EGX70"}
             </button>
@@ -320,23 +338,33 @@ function Dashboard({
                 onAskAi("all");
               }}
               className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                aiType === "all"
+                aiType === "all" || currentClickedButton === "all"
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
               } disabled:opacity-50 disabled:cursor-not-allowed`}
               disabled={aiLoading}
+              data-selected={
+                currentClickedButton === "all" ? "true" : undefined
+              }
             >
-              {aiLoading && aiType === "all"
+              {aiLoading && currentClickedButton === "all"
                 ? "Getting All Stocks Recommendation..."
                 : "Ask AI for All EGX Stocks"}
             </button>
             {/* New button for analyzing user's own stocks */}
             <button
               onClick={onAnalyzeMyStocks}
-              className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors bg-accent text-accent-foreground hover:bg-accent/80 disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                currentClickedButton === "myStocks"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-accent text-accent-foreground hover:bg-accent/80"
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
               disabled={myStocksLoading}
+              data-selected={
+                currentClickedButton === "myStocks" ? "true" : undefined
+              }
             >
-              {myStocksLoading
+              {myStocksLoading && currentClickedButton === "myStocks"
                 ? "Analyzing My Portfolio..."
                 : "Analyze My Stocks"}
             </button>
