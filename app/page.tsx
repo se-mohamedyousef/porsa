@@ -15,15 +15,45 @@ type User = {
   [key: string]: any;
 };
 
+// Types for AI recommendations and analysis
+type AiRecommendation = {
+  ticker: string;
+  name: string;
+  reason: string;
+  entry: string;
+  exit: string;
+  risk: string;
+};
+type MyStockAdvice = {
+  ticker: string | null;
+  advice: string;
+};
+
+// UI: Color for risk level
+function riskColor(risk: string) {
+  switch (risk?.toLowerCase()) {
+    case "low":
+      return "bg-green-100 text-green-800 border-green-300";
+    case "medium":
+      return "bg-yellow-100 text-yellow-800 border-yellow-300";
+    case "high":
+      return "bg-red-100 text-red-800 border-red-300";
+    default:
+      return "bg-gray-100 text-gray-800 border-gray-300";
+  }
+}
+
 export default function Home() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [aiRecommendation, setAiRecommendation] = useState<string | null>(null);
+  const [aiRecommendation, setAiRecommendation] = useState<
+    AiRecommendation[] | null
+  >(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiType, setAiType] = useState<"egx30" | "egx70" | "all">("egx30");
   const [myStocksLoading, setMyStocksLoading] = useState(false);
   const [myStocksRecommendation, setMyStocksRecommendation] = useState<
-    string | null
+    MyStockAdvice[] | null
   >(null);
 
   // Track which button is currently clicked
@@ -60,12 +90,10 @@ export default function Home() {
     setAiRecommendation(null);
 
     try {
-      // EGX30: country-id=59, EGX70: country-id=59&index-id=EGX70, All: country-id=59
       let url =
         "https://api.investing.com/api/financialdata/assets/equitiesByCountry/default?country-id=59&fields-list=id,name,symbol,last";
       let promptIndex = "EGX30";
       if (type === "egx70") {
-        // There is no direct index filter in the sample API, so we will filter by symbol later
         promptIndex = "EGX70";
       } else if (type === "all") {
         promptIndex = "all EGX stocks";
@@ -80,35 +108,52 @@ export default function Home() {
 
       let egxData = data1.data;
 
+      // Stronger prompt: ask for JSON array of objects
       const prompt = `
-      You are a professional Egyptian stock market analyst specializing in the ${promptIndex}.
-      Here is today’s market data for ${promptIndex} companies:
-      
-      ${JSON.stringify(egxData)}
-      
-      From this data, pick the **top 3 stocks** for short-term investment today.
-      
-      For each stock, give in **1–2 short sentences**:
-      - Ticker & company name
-      - Main reason it’s promising today
-      - Entry & exit price ranges
-      - Risk level (low, medium, high)
-      
-      Keep it concise and easy to scan.  
-      Educational purposes only — not financial advice.
-      `;
+You are a professional Egyptian stock market analyst specializing in the ${promptIndex}.
+Here is today’s market data for ${promptIndex} companies:
+
+${JSON.stringify(egxData)}
+
+From this data, pick the top 3 stocks for short-term investment today.
+
+For each stock, return a JSON object with these fields:
+- ticker (string)
+- name (string)
+- reason (string, 1–2 sentences why it's promising today)
+- entry (string, entry price range)
+- exit (string, exit price range)
+- risk (string: low, medium, or high)
+
+Return a JSON array of exactly 3 objects, no explanation, no markdown, just the array.
+Educational purposes only — not financial advice.
+`;
 
       const res = await fetch("/api/askAi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt,
+          expectJson: true, // Optionally signal to backend to parse as JSON
         }),
       });
       const data = await res.json();
-      setAiRecommendation(data?.text || "No recommendation received.");
+
+      // Try to parse as JSON array
+      let parsed: AiRecommendation[] | null = null;
+      if (Array.isArray(data?.json)) {
+        parsed = data.json;
+      } else if (typeof data?.text === "string") {
+        try {
+          const arr = JSON.parse(data.text);
+          if (Array.isArray(arr)) parsed = arr;
+        } catch (e) {
+          parsed = null;
+        }
+      }
+      setAiRecommendation(parsed || null);
     } catch (err) {
-      setAiRecommendation("Failed to fetch recommendation.");
+      setAiRecommendation(null);
     } finally {
       setAiLoading(false);
       setCurrentClickedButton(null);
@@ -133,7 +178,9 @@ export default function Home() {
         !Array.isArray(userStocks) ||
         userStocks.length === 0
       ) {
-        setMyStocksRecommendation("No stocks found in your portfolio.");
+        setMyStocksRecommendation([
+          { ticker: null, advice: "No stocks found in your portfolio." },
+        ]);
         return;
       }
 
@@ -144,24 +191,46 @@ export default function Home() {
       const egxDataJson = await egxRes.json();
       const allEgxStocks = egxDataJson.data;
 
+      // Stronger prompt: ask for JSON array of objects
       const prompt = `
-      You are an Egyptian stock market analyst.
-      Here is today's EGX market data: ${JSON.stringify(allEgxStocks)}
-      My EGX portfolio: ${JSON.stringify(userStocks)}
+You are an Egyptian stock market analyst.
+Here is today's EGX market data: ${JSON.stringify(allEgxStocks)}
+My EGX portfolio: ${JSON.stringify(userStocks)}
 
-      For each stock in my portfolio, if there is a profit, briefly say when I could consider selling to realize the profit, using the latest market data above. 
-      Keep it concise and practical. Not financial advice.
-      `;
+For each stock in my portfolio, if there is a profit, return a JSON object:
+- ticker (string)
+- advice (string, concise and practical, when to consider selling to realize profit)
+
+Return a JSON array of such objects, no explanation, no markdown, just the array.
+If no advice, return an empty array.
+Not financial advice.
+`;
 
       const aiRes = await fetch("/api/askAi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt, expectJson: true }),
       });
       const aiData = await aiRes.json();
-      setMyStocksRecommendation(aiData?.text || "No analysis received.");
+
+      let parsed: MyStockAdvice[] | null = null;
+      if (Array.isArray(aiData?.json)) {
+        parsed = aiData.json;
+      } else if (typeof aiData?.text === "string") {
+        try {
+          const arr = JSON.parse(aiData.text);
+          if (Array.isArray(arr)) parsed = arr;
+        } catch (e) {
+          parsed = null;
+        }
+      }
+      setMyStocksRecommendation(
+        parsed || [{ ticker: null, advice: "No analysis received." }]
+      );
     } catch (err) {
-      setMyStocksRecommendation("Failed to analyze your portfolio.");
+      setMyStocksRecommendation([
+        { ticker: null, advice: "Failed to analyze your portfolio." },
+      ]);
     } finally {
       setMyStocksLoading(false);
       setCurrentClickedButton(null);
@@ -170,14 +239,12 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-100 px-4">
         <div className="text-center w-full max-w-xs mx-auto">
-          <div className="w-12 h-12 sm:w-8 sm:h-8 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
-            <span className="text-primary-foreground font-bold text-lg sm:text-sm">
-              P
-            </span>
+          <div className="w-12 h-12 sm:w-8 sm:h-8 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <span className="text-white font-bold text-lg sm:text-sm">P</span>
           </div>
-          <p className="text-muted-foreground text-base sm:text-sm">
+          <p className="text-muted-foreground text-base sm:text-sm animate-pulse">
             Loading...
           </p>
         </div>
@@ -187,7 +254,7 @@ export default function Home() {
 
   if (!currentUser) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-2">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-100 px-2">
         <div className="w-full max-w-sm">
           <LoginForm onLogin={handleLogin} />
         </div>
@@ -196,7 +263,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex flex-col">
       <Header currentUser={currentUser} onLogout={handleLogout} />
       <main
         className={`flex-1 w-full ${CONTAINER_MAX_WIDTH} mx-auto px-2 md:px-6 lg:px-8 py-4 md:py-8`}
@@ -226,18 +293,18 @@ function Header({
   onLogout: () => void;
 }) {
   return (
-    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-blur]:bg-background/60 w-full">
+    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-blur]:bg-background/60 w-full shadow-md">
       <div
         className={`w-full ${CONTAINER_MAX_WIDTH} mx-auto px-2 md:px-6 lg:px-8 py-3 md:py-4`}
       >
         <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-0 w-full">
           <div className="flex items-center space-x-2 w-full md:w-auto justify-center md:justify-start">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">
-                P
-              </span>
+            <div className="w-8 h-8 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-lg flex items-center justify-center shadow">
+              <span className="text-white font-bold text-sm">P</span>
             </div>
-            <h1 className="text-lg md:text-2xl font-bold">Porsa</h1>
+            <h1 className="text-lg md:text-2xl font-bold text-blue-900">
+              Porsa
+            </h1>
           </div>
           <div className="flex flex-col md:flex-row items-center md:space-x-4 space-y-1 md:space-y-0 mt-2 md:mt-0 w-full md:w-auto">
             {currentUser && (
@@ -263,6 +330,140 @@ function Header({
   );
 }
 
+// Helper function to get color classes for each button based on selection
+function getButtonColor(
+  button: "egx30" | "egx70" | "all" | "myStocks",
+  currentClickedButton: "egx30" | "egx70" | "all" | "myStocks" | null
+) {
+  if (currentClickedButton === button) {
+    switch (button) {
+      case "egx30":
+        return "bg-blue-600 text-white shadow";
+      case "egx70":
+        return "bg-green-600 text-white shadow";
+      case "all":
+        return "bg-yellow-500 text-black shadow";
+      case "myStocks":
+        return "bg-purple-600 text-white shadow";
+      default:
+        return "bg-primary text-primary-foreground";
+    }
+  } else {
+    switch (button) {
+      case "egx30":
+        return "bg-blue-100 text-blue-800 hover:bg-blue-200";
+      case "egx70":
+        return "bg-green-100 text-green-800 hover:bg-green-200";
+      case "all":
+        return "bg-yellow-100 text-yellow-900 hover:bg-yellow-200";
+      case "myStocks":
+        return "bg-purple-100 text-purple-900 hover:bg-purple-200";
+      default:
+        return "bg-secondary text-secondary-foreground";
+    }
+  }
+}
+
+// Stronger UI for AI Recommendations
+function AiRecommendationCard({
+  recommendations,
+}: {
+  recommendations: AiRecommendation[] | null;
+}) {
+  // Defensive: ensure recommendations is an array
+  if (!Array.isArray(recommendations) || recommendations.length === 0) {
+    return (
+      <div className="mt-2 p-4 bg-white border border-blue-100 rounded-lg text-sm text-gray-700 shadow-sm whitespace-pre-line">
+        No recommendation received.
+      </div>
+    );
+  }
+  return (
+    <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+      {recommendations.map((rec, idx) => (
+        <div
+          key={idx}
+          className="relative bg-gradient-to-br from-blue-100/80 to-white border-2 border-blue-300 rounded-2xl p-6 shadow-lg hover:scale-[1.025] transition-transform group"
+        >
+          <div className="absolute top-2 right-2">
+            <span
+              className={`inline-block px-2 py-0.5 rounded border text-xs font-semibold ${riskColor(
+                rec.risk
+              )}`}
+            >
+              {rec.risk?.charAt(0).toUpperCase() + rec.risk?.slice(1)} Risk
+            </span>
+          </div>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-2xl font-extrabold text-blue-800 tracking-wide drop-shadow">
+              {rec.ticker}
+            </span>
+            <span className="text-lg font-semibold text-gray-700">
+              {rec.name}
+            </span>
+          </div>
+          <div className="mb-2 text-base text-gray-700 font-medium">
+            <span className="text-blue-700">Reason:</span>{" "}
+            <span className="font-normal">{rec.reason}</span>
+          </div>
+          <div className="flex flex-row gap-2 mb-2">
+            <div className="flex-1">
+              <span className="block text-xs text-blue-700 font-semibold">
+                Entry
+              </span>
+              <span className="block bg-blue-200/80 text-blue-900 px-2 py-1 rounded-lg font-mono text-sm shadow-inner">
+                {rec.entry}
+              </span>
+            </div>
+            <div className="flex-1">
+              <span className="block text-xs text-purple-700 font-semibold">
+                Exit
+              </span>
+              <span className="block bg-purple-200/80 text-purple-900 px-2 py-1 rounded-lg font-mono text-sm shadow-inner">
+                {rec.exit}
+              </span>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Stronger UI for Portfolio Analysis
+function MyStocksAnalysisCard({
+  advices,
+}: {
+  advices: MyStockAdvice[] | null;
+}) {
+  if (!Array.isArray(advices) || advices.length === 0) {
+    return (
+      <div className="mt-2 p-4 bg-white border border-purple-100 rounded-lg text-sm text-gray-700 shadow-sm whitespace-pre-line">
+        No analysis received.
+      </div>
+    );
+  }
+  return (
+    <div className="mt-4 grid gap-3">
+      {advices.map((item, idx) => (
+        <div
+          key={idx}
+          className="flex items-start gap-3 bg-gradient-to-br from-purple-100/80 to-white border-2 border-purple-300 rounded-xl p-4 shadow group"
+        >
+          {item.ticker ? (
+            <span className="font-bold text-purple-700 text-lg min-w-[60px] tracking-wide">
+              {item.ticker}
+            </span>
+          ) : (
+            <span className="font-bold text-gray-400 min-w-[60px]">•</span>
+          )}
+          <span className="text-gray-800 text-base">{item.advice}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Dashboard({
   currentUser,
   aiRecommendation,
@@ -276,108 +477,120 @@ function Dashboard({
   currentClickedButton,
 }: {
   currentUser: User;
-  aiRecommendation: string | null;
+  aiRecommendation: AiRecommendation[] | null;
   aiLoading: boolean;
   onAskAi: (type?: "egx30" | "egx70" | "all") => void;
   aiType: "egx30" | "egx70" | "all";
   setAiType: (type: "egx30" | "egx70" | "all") => void;
   myStocksLoading: boolean;
-  myStocksRecommendation: string | null;
+  myStocksRecommendation: MyStockAdvice[] | null;
   onAnalyzeMyStocks: () => void;
   currentClickedButton: "egx30" | "egx70" | "all" | "myStocks" | null;
 }) {
   return (
-    <div className="space-y-4 md:space-y-6 w-full">
-      <div className="bg-background border rounded-lg shadow-sm p-2 md:p-6 w-full">
+    <div className="space-y-6 w-full">
+      <div className="bg-accent border border-blue-100 rounded-lg shadow-sm p-2 md:p-6 w-full">
         <PortfolioTracker userId={currentUser?.id} />
       </div>
-      <div className="bg-background border rounded-lg shadow-sm p-2 md:p-6 w-full">
-        <div className="flex flex-col gap-2">
+      <div className="bg-accent border border-purple-100 rounded-lg shadow-sm p-2 md:p-6 w-full">
+        <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => {
                 setAiType("egx30");
                 onAskAi("egx30");
               }}
-              className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                aiType === "egx30" || currentClickedButton === "egx30"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${getButtonColor(
+                "egx30",
+                currentClickedButton
+              )} disabled:opacity-50 disabled:cursor-not-allowed`}
               disabled={aiLoading}
               data-selected={
                 currentClickedButton === "egx30" ? "true" : undefined
               }
             >
-              {aiLoading && currentClickedButton === "egx30"
-                ? "Getting EGX30 Recommendation..."
-                : "Ask AI for EGX30"}
+              {aiLoading && currentClickedButton === "egx30" ? (
+                <span className="flex items-center gap-2">
+                  <span className="animate-spin w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full"></span>
+                  Getting EGX30...
+                </span>
+              ) : (
+                "Ask AI for EGX30"
+              )}
             </button>
             <button
               onClick={() => {
                 setAiType("egx70");
                 onAskAi("egx70");
               }}
-              className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                aiType === "egx70" || currentClickedButton === "egx70"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${getButtonColor(
+                "egx70",
+                currentClickedButton
+              )} disabled:opacity-50 disabled:cursor-not-allowed`}
               disabled={aiLoading}
               data-selected={
                 currentClickedButton === "egx70" ? "true" : undefined
               }
             >
-              {aiLoading && currentClickedButton === "egx70"
-                ? "Getting EGX70 Recommendation..."
-                : "Ask AI for EGX70"}
+              {aiLoading && currentClickedButton === "egx70" ? (
+                <span className="flex items-center gap-2">
+                  <span className="animate-spin w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full"></span>
+                  Getting EGX70...
+                </span>
+              ) : (
+                "Ask AI for EGX70"
+              )}
             </button>
             <button
               onClick={() => {
                 setAiType("all");
                 onAskAi("all");
               }}
-              className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                aiType === "all" || currentClickedButton === "all"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${getButtonColor(
+                "all",
+                currentClickedButton
+              )} disabled:opacity-50 disabled:cursor-not-allowed`}
               disabled={aiLoading}
               data-selected={
                 currentClickedButton === "all" ? "true" : undefined
               }
             >
-              {aiLoading && currentClickedButton === "all"
-                ? "Getting All Stocks Recommendation..."
-                : "Ask AI for All EGX Stocks"}
+              {aiLoading && currentClickedButton === "all" ? (
+                <span className="flex items-center gap-2">
+                  <span className="animate-spin w-4 h-4 border-2 border-yellow-400 border-t-transparent rounded-full"></span>
+                  Getting All Stocks...
+                </span>
+              ) : (
+                "Ask AI for All EGX Stocks"
+              )}
             </button>
             {/* New button for analyzing user's own stocks */}
             <button
               onClick={onAnalyzeMyStocks}
-              className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                currentClickedButton === "myStocks"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-accent text-accent-foreground hover:bg-accent/80"
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${getButtonColor(
+                "myStocks",
+                currentClickedButton
+              )} disabled:opacity-50 disabled:cursor-not-allowed`}
               disabled={myStocksLoading}
               data-selected={
                 currentClickedButton === "myStocks" ? "true" : undefined
               }
             >
-              {myStocksLoading && currentClickedButton === "myStocks"
-                ? "Analyzing My Portfolio..."
-                : "Analyze My Stocks"}
+              {myStocksLoading && currentClickedButton === "myStocks" ? (
+                <span className="flex items-center gap-2">
+                  <span className="animate-spin w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full"></span>
+                  Analyzing My Portfolio...
+                </span>
+              ) : (
+                "Analyze My Stocks"
+              )}
             </button>
           </div>
           {aiRecommendation && (
-            <div className="mt-2 p-3 bg-muted rounded text-sm text-muted-foreground whitespace-pre-line">
-              {aiRecommendation}
-            </div>
+            <AiRecommendationCard recommendations={aiRecommendation} />
           )}
           {myStocksRecommendation && (
-            <div className="mt-2 p-3 bg-muted rounded text-sm text-muted-foreground whitespace-pre-line">
-              {myStocksRecommendation}
-            </div>
+            <MyStocksAnalysisCard advices={myStocksRecommendation} />
           )}
         </div>
       </div>
