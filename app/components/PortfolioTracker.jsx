@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useUserData } from "../hooks/useUserData";
 import PortfolioSummary from "./PortfolioSummary";
 
@@ -20,6 +20,8 @@ export default function PortfolioTracker({ userId }) {
   });
   const [addingStock, setAddingStock] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const intervalRef = useRef(null);
 
   // 📡 Fetch prices and update saved stocks
   const refreshSavedStockPrices = async (savedStocks) => {
@@ -108,6 +110,21 @@ export default function PortfolioTracker({ userId }) {
     setNewStock({ symbol: "", quantity: "", buyPrice: "" });
     setAddingStock(false);
   };
+
+  // Auto-refresh prices every 60 seconds if enabled
+  useEffect(() => {
+    if (autoRefresh && stocks.length > 0) {
+      // Immediately refresh on enable
+      refreshSavedStockPrices(stocks);
+      intervalRef.current = setInterval(() => {
+        refreshSavedStockPrices(stocks);
+      }, 30000);
+    }
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRefresh, stocks.length]);
 
   return (
     <div className="p-4 sm:p-6">
@@ -222,53 +239,37 @@ export default function PortfolioTracker({ userId }) {
           )}
         </button>
 
-        <button
-          onClick={() => refreshSavedStockPrices(stocks)}
-          disabled={refreshing || loading || stocks.length === 0}
-          className="inline-flex items-center justify-center px-4 py-2 bg-secondary text-secondary-foreground rounded-md text-sm font-medium hover:bg-secondary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {refreshing ? (
-            <>
-              <svg
-                className="animate-spin -ml-1 mr-2 h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              Refreshing...
-            </>
-          ) : (
-            <>
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
+        <label className="inline-flex items-center gap-2 cursor-pointer select-none text-sm font-medium">
+          <input
+            type="checkbox"
+            checked={autoRefresh}
+            onChange={() => setAutoRefresh((v) => !v)}
+            className="form-checkbox h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary"
+            disabled={loading || stocks.length === 0}
+          />
+          Auto-refresh prices
+          {refreshing && (
+            <svg
+              className="animate-spin ml-2 h-4 w-4 text-muted-foreground"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
                 stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-              Refresh Prices
-            </>
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
           )}
-        </button>
+        </label>
       </div>
 
       {/* Stock Table */}
