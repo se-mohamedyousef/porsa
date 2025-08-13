@@ -27,6 +27,7 @@ type AiRecommendation = {
 type MyStockAdvice = {
   ticker: string | null;
   advice: string;
+  exit?: string | null; // Added exit point (optional for backward compatibility)
 };
 
 // UI: Color for risk level
@@ -200,6 +201,7 @@ My EGX portfolio: ${JSON.stringify(userStocks)}
 For each stock in my portfolio, if there is a profit, return a JSON object:
 - ticker (string)
 - advice (string, concise and practical, when to consider selling to realize profit)
+- exit (string, recommended exit price or price range for selling to realize profit)
 
 Return a JSON array of such objects, no explanation, no markdown, just the array.
 If no advice, return an empty array.
@@ -263,7 +265,7 @@ Not financial advice.
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-40% to-55% flex flex-col">
       <Header currentUser={currentUser} onLogout={handleLogout} />
       <main
         className={`flex-1 w-full ${CONTAINER_MAX_WIDTH} mx-auto px-2 md:px-6 lg:px-8 py-4 md:py-8`}
@@ -457,7 +459,17 @@ function MyStocksAnalysisCard({
           ) : (
             <span className="font-bold text-gray-400 min-w-[60px]">•</span>
           )}
-          <span className="text-gray-800 text-base">{item.advice}</span>
+          <div className="flex flex-col">
+            <span className="text-gray-800 text-base">{item.advice}</span>
+            {item.exit && (
+              <span className="text-xs text-purple-700 mt-1">
+                <span className="font-semibold">Exit Point:</span>{" "}
+                <span className="bg-purple-200/80 text-purple-900 px-2 py-0.5 rounded font-mono shadow-inner">
+                  {item.exit}
+                </span>
+              </span>
+            )}
+          </div>
         </div>
       ))}
     </div>
@@ -587,10 +599,25 @@ function Dashboard({
             </button>
           </div>
           {aiRecommendation && (
-            <AiRecommendationCard recommendations={aiRecommendation} />
+            <>
+              <div className="mt-6 mb-2 text-lg font-bold text-blue-900">
+                AI Analysis for{" "}
+                {aiType === "egx30"
+                  ? "EGX30"
+                  : aiType === "egx70"
+                  ? "EGX70"
+                  : "All EGX Stocks"}
+              </div>
+              <AiRecommendationCard recommendations={aiRecommendation} />
+            </>
           )}
           {myStocksRecommendation && (
-            <MyStocksAnalysisCard advices={myStocksRecommendation} />
+            <>
+              <div className="mt-6 mb-2 text-lg font-bold text-purple-900">
+                AI Analysis for My Portfolio
+              </div>
+              <MyStocksAnalysisCard advices={myStocksRecommendation} />
+            </>
           )}
         </div>
       </div>
