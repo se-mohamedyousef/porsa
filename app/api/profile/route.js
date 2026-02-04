@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getUserProfile, saveUserProfile } from "../../../lib/kv";
+import { getUserProfile, saveUserProfile, getUser, updateUser, getUserByEmail } from "../../../lib/kv";
 
 // GET - Retrieve user profile
 export async function GET(request) {
@@ -35,6 +35,39 @@ export async function POST(request) {
         { error: "User ID is required" },
         { status: 400 }
       );
+    }
+
+    // If email is being updated, validate and check for duplicates
+    if (profile.email) {
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(profile.email)) {
+        return NextResponse.json(
+          { error: "Invalid email format" },
+          { status: 400 }
+        );
+      }
+
+      // Get current user
+      const currentUser = await getUser(userId);
+      
+      // Check if email is different from current one
+      if (currentUser && currentUser.email !== profile.email) {
+        // Check if email is already used by another user
+        const existingUserWithEmail = await getUserByEmail(profile.email);
+        if (existingUserWithEmail && existingUserWithEmail.id !== userId) {
+          return NextResponse.json(
+            { error: "Email already in use by another account" },
+            { status: 409 }
+          );
+        }
+
+        // Update user record with new email
+        await updateUser(userId, {
+          ...currentUser,
+          email: profile.email,
+        });
+      }
     }
 
     const result = await saveUserProfile(userId, profile);

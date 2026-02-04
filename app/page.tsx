@@ -2,7 +2,9 @@
 
 import PortfolioTracker from "./components/PortfolioTracker";
 import LoginForm from "./components/LoginForm";
+import ResetPasswordForm from "./components/ResetPasswordForm";
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 // Responsive container max width for desktop, tablet, and mobile
 const CONTAINER_MAX_WIDTH = "max-w-7xl"; // wider for desktop
@@ -45,6 +47,9 @@ function riskColor(risk: string) {
 }
 
 export default function Home() {
+  const searchParams = useSearchParams();
+  const resetToken = searchParams.get("token");
+  
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [aiRecommendation, setAiRecommendation] = useState<
@@ -252,6 +257,11 @@ Not financial advice.
         </div>
       </div>
     );
+  }
+
+  // Show reset password form if token is present
+  if (resetToken) {
+    return <ResetPasswordForm token={resetToken} />;
   }
 
   if (!currentUser) {

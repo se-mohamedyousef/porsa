@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getUserByPhone, createSession } from "../../../../lib/kv";
+import bcrypt from "bcryptjs";
 
 export async function POST(request) {
   try {
@@ -23,8 +24,10 @@ export async function POST(request) {
       );
     }
 
-    // Check password (in production, this should be hashed comparison)
-    if (user.password !== password) {
+    // Check password using bcrypt
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    
+    if (!isPasswordValid) {
       return NextResponse.json(
         { error: "Invalid phone or password" },
         { status: 401 }

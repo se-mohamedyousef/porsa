@@ -4,21 +4,47 @@ import { useState } from "react";
 
 export default function LoginForm({ onLogin }) {
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [formData, setFormData] = useState({
     phone: "",
     password: "",
     name: "",
+    email: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setSuccessMessage("");
 
     try {
-      if (isLogin) {
+      if (isForgotPassword) {
+        // Forgot password logic
+        const response = await fetch("/api/auth/forgot-password", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: formData.email,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          setSuccessMessage(
+            "Password reset link sent! Check your email."
+          );
+          setFormData({ phone: "", password: "", name: "", email: "" });
+        } else {
+          setError(data.error || "Failed to send reset link");
+        }
+      } else if (isLogin) {
         // Login logic
         const response = await fetch("/api/auth/login", {
           method: "POST",
@@ -51,6 +77,7 @@ export default function LoginForm({ onLogin }) {
             phone: formData.phone,
             password: formData.password,
             name: formData.name,
+            email: formData.email,
           }),
         });
 
@@ -86,66 +113,134 @@ export default function LoginForm({ onLogin }) {
             </span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
-            {isLogin ? "Welcome Back" : "Create Account"}
+            {isForgotPassword
+              ? "Reset Password"
+              : isLogin
+              ? "Welcome Back"
+              : "Create Account"}
           </h2>
           <p className="text-muted-foreground mt-2 text-sm sm:text-base">
-            {isLogin
+            {isForgotPassword
+              ? "Enter your email to receive a reset link"
+              : isLogin
               ? "Sign in to your account"
               : "Join Porsa to track your portfolio"}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
-          {!isLogin && (
+          {isForgotPassword ? (
             <div>
               <label className="block text-xs sm:text-sm font-medium text-muted-foreground mb-2">
-                Full Name
+                Email
               </label>
               <input
-                type="text"
-                required={!isLogin}
-                placeholder="Your full name"
-                value={formData.name}
-                onChange={(e) => handleInputChange("name", e.target.value)}
+                type="email"
+                required
+                placeholder="your@email.com"
+                value={formData.email}
+                onChange={(e) => handleInputChange("email", e.target.value)}
                 className="w-full px-3 py-2 border border-input bg-background rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                autoComplete="email"
               />
             </div>
+          ) : (
+            <>
+              {!isLogin && (
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-muted-foreground mb-2">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    required={!isLogin}
+                    placeholder="Your full name"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    className="w-full px-3 py-2 border border-input bg-background rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                  />
+                </div>
+              )}
+
+              {!isLogin && (
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-muted-foreground mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    required={!isLogin}
+                    placeholder="your@email.com"
+                    value={formData.email}
+                    onChange={(e) =>
+                      handleInputChange("email", e.target.value)
+                    }
+                    className="w-full px-3 py-2 border border-input bg-background rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                    autoComplete="email"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-muted-foreground mb-2">
+                  Phone
+                </label>
+                <input
+                  type="phone"
+                  required
+                  placeholder="Phone"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  className="w-full px-3 py-2 border border-input bg-background rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                  inputMode="tel"
+                  autoComplete="tel"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs sm:text-sm font-medium text-muted-foreground mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Your password"
+                  value={formData.password}
+                  onChange={(e) =>
+                    handleInputChange("password", e.target.value)
+                  }
+                  className="w-full px-3 py-2 border border-input bg-background rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                  autoComplete={isLogin ? "current-password" : "new-password"}
+                />
+              </div>
+
+              {isLogin && (
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsForgotPassword(true);
+                      setError("");
+                      setSuccessMessage("");
+                    }}
+                    className="text-xs sm:text-sm text-primary hover:underline"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
+            </>
           )}
-
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-muted-foreground mb-2">
-              Phone
-            </label>
-            <input
-              type="phone"
-              required
-              placeholder="Phone"
-              value={formData.phone}
-              onChange={(e) => handleInputChange("phone", e.target.value)}
-              className="w-full px-3 py-2 border border-input bg-background rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-              inputMode="tel"
-              autoComplete="tel"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs sm:text-sm font-medium text-muted-foreground mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              required
-              placeholder="Your password"
-              value={formData.password}
-              onChange={(e) => handleInputChange("password", e.target.value)}
-              className="w-full px-3 py-2 border border-input bg-background rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-              autoComplete={isLogin ? "current-password" : "new-password"}
-            />
-          </div>
 
           {error && (
             <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-xs sm:text-sm">
               {error}
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="p-3 bg-green-100 border border-green-400 text-green-700 rounded-md text-xs sm:text-sm">
+              {successMessage}
             </div>
           )}
 
@@ -175,8 +270,14 @@ export default function LoginForm({ onLogin }) {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                {isLogin ? "Signing In..." : "Creating Account..."}
+                {isForgotPassword
+                  ? "Sending..."
+                  : isLogin
+                  ? "Signing In..."
+                  : "Creating Account..."}
               </>
+            ) : isForgotPassword ? (
+              "Send Reset Link"
             ) : isLogin ? (
               "Sign In"
             ) : (
@@ -186,14 +287,31 @@ export default function LoginForm({ onLogin }) {
         </form>
 
         <div className="text-center">
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-xs sm:text-sm text-primary hover:underline mt-2"
-          >
-            {isLogin
-              ? "Don't have an account? Sign up"
-              : "Already have an account? Sign in"}
-          </button>
+          {isForgotPassword ? (
+            <button
+              onClick={() => {
+                setIsForgotPassword(false);
+                setError("");
+                setSuccessMessage("");
+              }}
+              className="text-xs sm:text-sm text-primary hover:underline mt-2"
+            >
+              Back to Sign In
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setError("");
+                setSuccessMessage("");
+              }}
+              className="text-xs sm:text-sm text-primary hover:underline mt-2"
+            >
+              {isLogin
+                ? "Don't have an account? Sign up"
+                : "Already have an account? Sign in"}
+            </button>
+          )}
         </div>
       </div>
     </div>
