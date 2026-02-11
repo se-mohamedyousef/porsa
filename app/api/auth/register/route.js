@@ -24,25 +24,50 @@ export async function POST(request) {
     }
 
     // Check if user already exists with this phone
-    const existingUserByPhone = await getUserByPhone(phone);
-    if (existingUserByPhone) {
+    try {
+      const existingUserByPhone = await getUserByPhone(phone);
+      if (existingUserByPhone) {
+        return NextResponse.json(
+          { error: "User already exists with this phone" },
+          { status: 409 }
+        );
+      }
+    } catch (kvError) {
+      console.error("KV getUserByPhone error:", kvError);
       return NextResponse.json(
-        { error: "User already exists with this phone" },
-        { status: 409 }
+        { error: "Database connection error. Please check KV configuration." },
+        { status: 500 }
       );
     }
 
     // Check if user already exists with this email
-    const existingUserByEmail = await getUserByEmail(email);
-    if (existingUserByEmail) {
+    try {
+      const existingUserByEmail = await getUserByEmail(email);
+      if (existingUserByEmail) {
+        return NextResponse.json(
+          { error: "User already exists with this email" },
+          { status: 409 }
+        );
+      }
+    } catch (kvError) {
+      console.error("KV getUserByEmail error:", kvError);
       return NextResponse.json(
-        { error: "User already exists with this email" },
-        { status: 409 }
+        { error: "Database connection error. Please check KV configuration." },
+        { status: 500 }
       );
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    let hashedPassword;
+    try {
+      hashedPassword = await bcrypt.hash(password, 10);
+    } catch (bcryptError) {
+      console.error("Bcrypt error:", bcryptError);
+      return NextResponse.json(
+        { error: "Password hashing failed" },
+        { status: 500 }
+      );
+    }
 
     // Create new user
     const newUser = {
@@ -54,25 +79,33 @@ export async function POST(request) {
       createdAt: new Date().toISOString(),
     };
 
-    const result = await createUser(newUser);
+    try {
+      const result = await createUser(newUser);
 
-    if (result.success) {
-      // Remove password from response
-      const { password: _, ...userWithoutPassword } = newUser;
-      return NextResponse.json({
-        success: true,
-        user: userWithoutPassword,
-      });
-    } else {
+      if (result.success) {
+        // Remove password from response
+        const { password: _, ...userWithoutPassword } = newUser;
+        return NextResponse.json({
+          success: true,
+          user: userWithoutPassword,
+        });
+      } else {
+        return NextResponse.json(
+          { error: result.error || "Failed to create user" },
+          { status: 500 }
+        );
+      }
+    } catch (createError) {
+      console.error("Create user error:", createError);
       return NextResponse.json(
-        { error: result.error || "Failed to create user" },
+        { error: "Failed to create user in database" },
         { status: 500 }
       );
     }
   } catch (error) {
     console.error("Registration error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: `Registration failed: ${error.message}` },
       { status: 500 }
     );
   }

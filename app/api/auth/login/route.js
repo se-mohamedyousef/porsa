@@ -15,7 +15,16 @@ export async function POST(request) {
     }
 
     // Find user by phone
-    const user = await getUserByPhone(phone);
+    let user;
+    try {
+      user = await getUserByPhone(phone);
+    } catch (kvError) {
+      console.error("KV getUserByPhone error:", kvError);
+      return NextResponse.json(
+        { error: "Database connection error. Please check KV configuration." },
+        { status: 500 }
+      );
+    }
 
     if (!user) {
       return NextResponse.json(
@@ -25,7 +34,16 @@ export async function POST(request) {
     }
 
     // Check password using bcrypt
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    let isPasswordValid;
+    try {
+      isPasswordValid = await bcrypt.compare(password, user.password);
+    } catch (bcryptError) {
+      console.error("Bcrypt compare error:", bcryptError);
+      return NextResponse.json(
+        { error: "Password verification failed" },
+        { status: 500 }
+      );
+    }
     
     if (!isPasswordValid) {
       return NextResponse.json(
@@ -42,26 +60,34 @@ export async function POST(request) {
       createdAt: new Date().toISOString(),
     };
 
-    const sessionResult = await createSession(user.id, sessionData);
+    try {
+      const sessionResult = await createSession(user.id, sessionData);
 
-    if (sessionResult.success) {
-      // Remove password from response
-      const { password: _, ...userWithoutPassword } = user;
-      return NextResponse.json({
-        success: true,
-        user: userWithoutPassword,
-        session: sessionData,
-      });
-    } else {
+      if (sessionResult.success) {
+        // Remove password from response
+        const { password: _, ...userWithoutPassword } = user;
+        return NextResponse.json({
+          success: true,
+          user: userWithoutPassword,
+          session: sessionData,
+        });
+      } else {
+        return NextResponse.json(
+          { error: "Failed to create session" },
+          { status: 500 }
+        );
+      }
+    } catch (sessionError) {
+      console.error("Create session error:", sessionError);
       return NextResponse.json(
-        { error: "Failed to create session" },
+        { error: "Failed to create session in database" },
         { status: 500 }
       );
     }
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: `Login failed: ${error.message}` },
       { status: 500 }
     );
   }
