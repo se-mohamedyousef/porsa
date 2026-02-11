@@ -49,7 +49,7 @@ function riskColor(risk: string) {
 function HomeContent() {
   const searchParams = useSearchParams();
   const resetToken = searchParams.get("token");
-  
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [aiRecommendation, setAiRecommendation] = useState<
@@ -615,8 +615,8 @@ function Dashboard({
                 {aiType === "egx30"
                   ? "EGX30"
                   : aiType === "egx70"
-                  ? "EGX70"
-                  : "All EGX Stocks"}
+                    ? "EGX70"
+                    : "All EGX Stocks"}
               </div>
               <AiRecommendationCard recommendations={aiRecommendation} />
             </>
