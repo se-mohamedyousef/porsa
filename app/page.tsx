@@ -3,7 +3,7 @@
 import PortfolioTracker from "./components/PortfolioTracker";
 import LoginForm from "./components/LoginForm";
 import ResetPasswordForm from "./components/ResetPasswordForm";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 // Responsive container max width for desktop, tablet, and mobile
@@ -46,7 +46,7 @@ function riskColor(risk: string) {
   }
 }
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams();
   const resetToken = searchParams.get("token");
   
@@ -632,5 +632,20 @@ function Dashboard({
         </div>
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-100">
+      <div className="text-center">
+        <div className="w-14 h-14 sm:w-16 sm:h-16 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4 animate-pulse">
+          <span className="text-primary-foreground font-bold text-xl sm:text-2xl">P</span>
+        </div>
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    </div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

@@ -4,8 +4,6 @@ import { kv } from "@vercel/kv";
 import crypto from "crypto";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(request) {
   try {
     const { email } = await request.json();
@@ -52,6 +50,9 @@ export async function POST(request) {
     const resetUrl = `${
       process.env.NEXT_PUBLIC_URL || "http://localhost:3000"
     }/reset-password?token=${resetToken}`;
+
+    // Initialize Resend
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
     // Send email using Resend
     try {
