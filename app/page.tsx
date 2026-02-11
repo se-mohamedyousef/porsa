@@ -23,15 +23,32 @@ type User = {
 type AiRecommendation = {
   ticker: string;
   name: string;
+  sector?: string;
   reason: string;
   entry: string;
-  exit: string;
+  exit?: string;
+  target_price?: string;
+  stop_loss?: string;
   risk: string;
+  time_horizon?: string;
+  market_cap_category?: string;
+  key_catalyst?: string;
+  potential_return?: string;
 };
 type MyStockAdvice = {
   ticker: string | null;
-  advice: string;
-  exit?: string | null; // Added exit point (optional for backward compatibility)
+  name?: string;
+  sector?: string;
+  advice: string; // This will be the detailed reason/analysis
+  entry?: string;
+  target_price?: string;
+  stop_loss?: string;
+  risk?: string;
+  time_horizon?: string;
+  market_cap_category?: string;
+  key_catalyst?: string;
+  potential_return?: string;
+  current_price?: string;
 };
 
 // UI: Color for risk level
@@ -125,17 +142,24 @@ Here is today’s market data for ${promptIndex} companies:
 
 ${JSON.stringify(egxData)}
 
-From this data, pick the top 3 stocks for short-term investment today.
+From this data, recommend 7 stocks for investment today (2 low-risk, 3 medium-risk, 2 high-risk).
 
 For each stock, return a JSON object with these fields:
 - ticker (string)
 - name (string)
-- reason (string, 1–2 sentences why it's promising today)
+- sector (string): Industry sector  
+- reason (string, 2-3 sentences with fundamental AND technical basis)
 - entry (string, entry price range)
-- exit (string, exit price range)
+- target_price (string, price target)
+- stop_loss (string, stop loss price)
 - risk (string: low, medium, or high)
+- time_horizon (string: short-term, medium-term, or long-term)
+- market_cap_category (string: large, mid, or small)
+- key_catalyst (string, 1 sentence on what makes it a good buy NOW)
+- potential_return (string, expected return percentage like +15%)
 
-Return a JSON array of exactly 3 objects, no explanation, no markdown, just the array.
+Return a JSON array of exactly 7 objects, no explanation, no markdown, just the array.
+Ensure diversity across sectors and risk levels.
 Educational purposes only — not financial advice.
 `;
 
@@ -201,20 +225,30 @@ Educational purposes only — not financial advice.
       const egxDataJson = await egxRes.json();
       const allEgxStocks = egxDataJson.data;
 
-      // Stronger prompt: ask for JSON array of objects
+      // Enhanced prompt: ask for comprehensive analysis of portfolio stocks
       const prompt = `
 You are an Egyptian stock market analyst.
 Here is today's EGX market data: ${JSON.stringify(allEgxStocks)}
 My EGX portfolio: ${JSON.stringify(userStocks)}
 
-For each stock in my portfolio, if there is a profit, return a JSON object:
-- ticker (string)
-- advice (string, concise and practical, when to consider selling to realize profit)
-- exit (string, recommended exit price or price range for selling to realize profit)
+For each stock in my portfolio, provide a comprehensive analysis with the following JSON object:
+- ticker (string): Stock symbol
+- name (string): Company name
+- sector (string): Industry sector
+- current_price (string): Current market price from the data
+- advice (string): 2-3 sentences analyzing current position - should I hold, sell, or add more? Include both fundamental and technical reasoning
+- entry (string): If buying more, recommended entry price range
+- target_price (string): Price target for profitable exit
+- stop_loss (string): Recommended stop loss to protect gains/limit losses
+- risk (string): "low", "medium", or "high" - current risk assessment
+- time_horizon (string): "short-term", "medium-term", or "long-term" - recommended holding period
+- market_cap_category (string): "large", "mid", or "small"
+- key_catalyst (string): 1 sentence on what could drive the stock price in coming weeks
+- potential_return (string): Expected return from current price to target (e.g., "+15%")
 
-Return a JSON array of such objects, no explanation, no markdown, just the array.
-If no advice, return an empty array.
-Not financial advice.
+Return a JSON array of objects, one per stock in my portfolio, no explanation, no markdown, just the array.
+If a stock is not found in market data, still provide analysis based on portfolio data.
+Educational purposes only — not financial advice.
 `;
 
       const aiRes = await fetch("/api/askAi", {
@@ -411,51 +445,119 @@ function AiRecommendationCard({
     );
   }
   return (
-    <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
       {recommendations.map((rec, idx) => (
         <div
           key={idx}
-          className="relative bg-gradient-to-br from-blue-100/80 to-white border-2 border-blue-300 rounded-2xl p-6 shadow-lg hover:scale-[1.025] transition-transform group"
+          className="relative bg-gradient-to-br from-blue-50/90 to-purple-50/90 dark:from-blue-900/30 dark:to-purple-900/30 border-2 border-blue-200 dark:border-blue-800 rounded-2xl p-5 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group"
         >
-          <div className="absolute top-2 right-2">
-            <span
-              className={`inline-block px-2 py-0.5 rounded border text-xs font-semibold ${riskColor(
-                rec.risk
-              )}`}
-            >
-              {rec.risk?.charAt(0).toUpperCase() + rec.risk?.slice(1)} Risk
-            </span>
-          </div>
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-2xl font-extrabold text-blue-800 tracking-wide drop-shadow">
-              {rec.ticker}
-            </span>
-            <span className="text-lg font-semibold text-gray-700">
-              {rec.name}
-            </span>
-          </div>
-          <div className="mb-2 text-base text-gray-700 font-medium">
-            <span className="text-blue-700">Reason:</span>{" "}
-            <span className="font-normal">{rec.reason}</span>
-          </div>
-          <div className="flex flex-row gap-2 mb-2">
+          {/* Header with Symbol, Risk Badge, and Sector */}
+          <div className="flex items-start justify-between mb-3">
             <div className="flex-1">
-              <span className="block text-xs text-blue-700 font-semibold">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-2xl font-extrabold text-blue-800 dark:text-blue-300 tracking-wide drop-shadow">
+                  {rec.ticker}
+                </span>
+                <span
+                  className={`inline-block px-2 py-0.5 rounded-full border text-xs font-semibold ${riskColor(
+                    rec.risk
+                  )}`}
+                >
+                  {rec.risk?.charAt(0).toUpperCase() + rec.risk?.slice(1)}
+                </span>
+              </div>
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                {rec.name}
+              </p>
+              {rec.sector && (
+                <span className="inline-block mt-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded text-xs font-medium">
+                  {rec.sector}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Key Catalyst */}
+          {rec.key_catalyst && (
+            <div className="mb-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 rounded">
+              <p className="text-xs font-semibold text-yellow-800 dark:text-yellow-300">
+                💡 {rec.key_catalyst}
+              </p>
+            </div>
+          )}
+
+          {/* Reason */}
+          <div className="mb-3">
+            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+              {rec.reason}
+            </p>
+          </div>
+
+          {/* Price Information Grid */}
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div className="bg-blue-100/50 dark:bg-blue-900/30 rounded-lg p-2">
+              <span className="block text-xs text-blue-700 dark:text-blue-300 font-semibold">
                 Entry
               </span>
-              <span className="block bg-blue-200/80 text-blue-900 px-2 py-1 rounded-lg font-mono text-sm shadow-inner">
+              <span className="block text-sm font-bold text-blue-900 dark:text-blue-200">
                 {rec.entry}
               </span>
             </div>
-            <div className="flex-1">
-              <span className="block text-xs text-purple-700 font-semibold">
-                Exit
-              </span>
-              <span className="block bg-purple-200/80 text-purple-900 px-2 py-1 rounded-lg font-mono text-sm shadow-inner">
-                {rec.exit}
-              </span>
-            </div>
+            {rec.target_price && (
+              <div className="bg-green-100/50 dark:bg-green-900/30 rounded-lg p-2">
+                <span className="block text-xs text-green-700 dark:text-green-300 font-semibold">
+                  Target
+                </span>
+                <span className="block text-sm font-bold text-green-900 dark:text-green-200">
+                  {rec.target_price}
+                </span>
+              </div>
+            )}
+            {rec.stop_loss && (
+              <div className="bg-red-100/50 dark:bg-red-900/30 rounded-lg p-2">
+                <span className="block text-xs text-red-700 dark:text-red-300 font-semibold">
+                  Stop Loss
+                </span>
+                <span className="block text-sm font-bold text-red-900 dark:text-red-200">
+                  {rec.stop_loss}
+                </span>
+              </div>
+            )}
+            {rec.potential_return && (
+              <div className="bg-emerald-100/50 dark:bg-emerald-900/30 rounded-lg p-2">
+                <span className="block text-xs text-emerald-700 dark:text-emerald-300 font-semibold">
+                  Potential
+                </span>
+                <span className="block text-sm font-bold text-emerald-900 dark:text-emerald-200">
+                  {rec.potential_return}
+                </span>
+              </div>
+            )}
           </div>
+
+          {/* Footer with Time Horizon and Market Cap */}
+          <div className="flex items-center justify-between pt-2 border-t border-blue-200 dark:border-blue-800">
+            {rec.time_horizon && (
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                ⏱️ {rec.time_horizon}
+              </span>
+            )}
+            {rec.market_cap_category && (
+              <span className="text-xs text-gray-600 dark:text-gray-400 capitalize">
+                📊 {rec.market_cap_category} cap
+              </span>
+            )}
+          </div>
+
+          {/* Action Buttons (optional - can add later) */}
+          {/* <div className="mt-3 flex gap-2">
+            <button className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors">
+              Quick Add
+            </button>
+            <button className="px-3 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 text-xs font-semibold rounded-lg transition-colors">
+              Analyze
+            </button>
+          </div> */}
         </div>
       ))}
     </div>
@@ -476,27 +578,121 @@ function MyStocksAnalysisCard({
     );
   }
   return (
-    <div className="mt-4 grid gap-3">
+    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
       {advices.map((item, idx) => (
         <div
           key={idx}
-          className="flex items-start gap-3 bg-gradient-to-br from-purple-100/80 to-white border-2 border-purple-300 rounded-xl p-4 shadow group"
+          className="relative bg-gradient-to-br from-purple-50/90 to-pink-50/90 dark:from-purple-900/30 dark:to-pink-900/30 border-2 border-purple-200 dark:border-purple-800 rounded-2xl p-5 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group"
         >
-          {item.ticker ? (
-            <span className="font-bold text-purple-700 text-lg min-w-[60px] tracking-wide">
-              {item.ticker}
-            </span>
-          ) : (
-            <span className="font-bold text-gray-400 min-w-[60px]">•</span>
-          )}
-          <div className="flex flex-col">
-            <span className="text-gray-800 text-base">{item.advice}</span>
-            {item.exit && (
-              <span className="text-xs text-purple-700 mt-1">
-                <span className="font-semibold">Exit Point:</span>{" "}
-                <span className="bg-purple-200/80 text-purple-900 px-2 py-0.5 rounded font-mono shadow-inner">
-                  {item.exit}
+          {/* Header with Symbol, Risk Badge, and Sector */}
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                {item.ticker ? (
+                  <span className="text-2xl font-extrabold text-purple-800 dark:text-purple-300 tracking-wide drop-shadow">
+                    {item.ticker}
+                  </span>
+                ) : (
+                  <span className="text-2xl font-bold text-gray-400">•</span>
+                )}
+                {item.risk && (
+                  <span
+                    className={`inline-block px-2 py-0.5 rounded-full border text-xs font-semibold ${riskColor(
+                      item.risk
+                    )}`}
+                  >
+                    {item.risk?.charAt(0).toUpperCase() + item.risk?.slice(1)}
+                  </span>
+                )}
+              </div>
+              {item.name && (
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  {item.name}
+                </p>
+              )}
+              {item.sector && (
+                <span className="inline-block mt-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded text-xs font-medium">
+                  {item.sector}
                 </span>
+              )}
+              {item.current_price && (
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  Current: <span className="font-semibold">{item.current_price} EGP</span>
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Key Catalyst */}
+          {item.key_catalyst && (
+            <div className="mb-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 rounded">
+              <p className="text-xs font-semibold text-yellow-800 dark:text-yellow-300">
+                💡 {item.key_catalyst}
+              </p>
+            </div>
+          )}
+
+          {/* Analysis/Advice */}
+          <div className="mb-3">
+            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+              {item.advice}
+            </p>
+          </div>
+
+          {/* Price Information Grid */}
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            {item.entry && (
+              <div className="bg-blue-100/50 dark:bg-blue-900/30 rounded-lg p-2">
+                <span className="block text-xs text-blue-700 dark:text-blue-300 font-semibold">
+                  Add More At
+                </span>
+                <span className="block text-sm font-bold text-blue-900 dark:text-blue-200">
+                  {item.entry}
+                </span>
+              </div>
+            )}
+            {item.target_price && (
+              <div className="bg-green-100/50 dark:bg-green-900/30 rounded-lg p-2">
+                <span className="block text-xs text-green-700 dark:text-green-300 font-semibold">
+                  Target
+                </span>
+                <span className="block text-sm font-bold text-green-900 dark:text-green-200">
+                  {item.target_price}
+                </span>
+              </div>
+            )}
+            {item.stop_loss && (
+              <div className="bg-red-100/50 dark:bg-red-900/30 rounded-lg p-2">
+                <span className="block text-xs text-red-700 dark:text-red-300 font-semibold">
+                  Stop Loss
+                </span>
+                <span className="block text-sm font-bold text-red-900 dark:text-red-200">
+                  {item.stop_loss}
+                </span>
+              </div>
+            )}
+            {item.potential_return && (
+              <div className="bg-emerald-100/50 dark:bg-emerald-900/30 rounded-lg p-2">
+                <span className="block text-xs text-emerald-700 dark:text-emerald-300 font-semibold">
+                  Potential
+                </span>
+                <span className="block text-sm font-bold text-emerald-900 dark:text-emerald-200">
+                  {item.potential_return}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Footer with Time Horizon and Market Cap */}
+          <div className="flex items-center justify-between pt-2 border-t border-purple-200 dark:border-purple-800">
+            {item.time_horizon && (
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                ⏱️ {item.time_horizon}
+              </span>
+            )}
+            {item.market_cap_category && (
+              <span className="text-xs text-gray-600 dark:text-gray-400 capitalize">
+                📊 {item.market_cap_category} cap
               </span>
             )}
           </div>
