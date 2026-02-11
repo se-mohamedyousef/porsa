@@ -3,6 +3,8 @@
 import PortfolioTracker from "./components/PortfolioTracker";
 import LoginForm from "./components/LoginForm";
 import ResetPasswordForm from "./components/ResetPasswordForm";
+import ProfilePage from "./components/ProfilePage";
+import LoadingSpinner from "./components/LoadingSpinner";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
@@ -52,6 +54,7 @@ function HomeContent() {
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showProfile, setShowProfile] = useState(false);
   const [aiRecommendation, setAiRecommendation] = useState<
     AiRecommendation[] | null
   >(null);
@@ -88,6 +91,7 @@ function HomeContent() {
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem("porsaCurrentUser");
+    setShowProfile(false);
   };
 
   async function handleAsk(type: "egx30" | "egx70" | "all" = aiType) {
@@ -246,13 +250,13 @@ Not financial advice.
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-100 px-4">
-        <div className="text-center w-full max-w-xs mx-auto">
-          <div className="w-12 h-12 sm:w-8 sm:h-8 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <span className="text-white font-bold text-lg sm:text-sm">P</span>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900 px-4">
+        <div className="text-center w-full max-w-xs mx-auto animate-fade-in">
+          <div className="w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl animate-pulse-subtle hover-glow">
+            <span className="text-white font-bold text-2xl">P</span>
           </div>
-          <p className="text-muted-foreground text-base sm:text-sm animate-pulse">
-            Loading...
+          <p className="text-muted-foreground text-lg font-medium animate-pulse">
+            Loading your portfolio...
           </p>
         </div>
       </div>
@@ -265,18 +269,26 @@ Not financial advice.
   }
 
   if (!currentUser) {
+    return <LoginForm onLogin={handleLogin} />;
+  }
+
+  // Show profile page if requested
+  if (showProfile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-100 px-2">
-        <div className="w-full max-w-sm">
-          <LoginForm onLogin={handleLogin} />
-        </div>
-      </div>
+      <ProfilePage
+        currentUser={currentUser}
+        onBack={() => setShowProfile(false)}
+      />
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-40% to-55% flex flex-col">
-      <Header currentUser={currentUser} onLogout={handleLogout} />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900 flex flex-col animate-fade-in">
+      <Header
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onShowProfile={() => setShowProfile(true)}
+      />
       <main
         className={`flex-1 w-full ${CONTAINER_MAX_WIDTH} mx-auto px-2 md:px-6 lg:px-8 py-4 md:py-8`}
       >
@@ -300,21 +312,23 @@ Not financial advice.
 function Header({
   currentUser,
   onLogout,
+  onShowProfile,
 }: {
   currentUser: User;
   onLogout: () => void;
+  onShowProfile: () => void;
 }) {
   return (
-    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-blur]:bg-background/60 w-full shadow-md">
+    <header className="glass-strong border-b border-white/20 dark:border-gray-700/30 w-full shadow-lg sticky top-0 z-50 animate-slide-down">
       <div
-        className={`w-full ${CONTAINER_MAX_WIDTH} mx-auto px-2 md:px-6 lg:px-8 py-3 md:py-4`}
+        className={`w-full ${CONTAINER_MAX_WIDTH} mx-auto px-2 md:px-6 lg:px-8 py-4 md:py-5`}
       >
-        <div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-0 w-full">
-          <div className="flex items-center space-x-2 w-full md:w-auto justify-center md:justify-start">
-            <div className="w-8 h-8 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-lg flex items-center justify-center shadow">
-              <span className="text-white font-bold text-sm">P</span>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-3 md:gap-0 w-full">
+          <div className="flex items-center space-x-3 w-full md:w-auto justify-center md:justify-start">
+            <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center shadow-lg hover-glow transition-all cursor-pointer hover-lift">
+              <span className="text-white font-bold text-lg">P</span>
             </div>
-            <h1 className="text-lg md:text-2xl font-bold text-blue-900">
+            <h1 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Porsa
             </h1>
           </div>
@@ -324,6 +338,12 @@ function Header({
                 <div className="text-sm text-muted-foreground truncate max-w-[120px] md:max-w-none">
                   👤 {currentUser.name || currentUser.phone}
                 </div>
+                <button
+                  onClick={onShowProfile}
+                  className="text-sm text-blue-600 hover:text-blue-800 transition-colors font-medium"
+                >
+                  Profile
+                </button>
                 <button
                   onClick={onLogout}
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -533,7 +553,7 @@ function Dashboard({
             >
               {aiLoading && currentClickedButton === "egx30" ? (
                 <span className="flex items-center gap-2">
-                  <span className="animate-spin w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full"></span>
+                  <LoadingSpinner size="sm" className="text-blue-400" />
                   Getting EGX30...
                 </span>
               ) : (
@@ -556,7 +576,7 @@ function Dashboard({
             >
               {aiLoading && currentClickedButton === "egx70" ? (
                 <span className="flex items-center gap-2">
-                  <span className="animate-spin w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full"></span>
+                  <LoadingSpinner size="sm" className="text-green-400" />
                   Getting EGX70...
                 </span>
               ) : (
@@ -579,7 +599,7 @@ function Dashboard({
             >
               {aiLoading && currentClickedButton === "all" ? (
                 <span className="flex items-center gap-2">
-                  <span className="animate-spin w-4 h-4 border-2 border-yellow-400 border-t-transparent rounded-full"></span>
+                  <LoadingSpinner size="sm" className="text-yellow-400" />
                   Getting All Stocks...
                 </span>
               ) : (
@@ -600,7 +620,7 @@ function Dashboard({
             >
               {myStocksLoading && currentClickedButton === "myStocks" ? (
                 <span className="flex items-center gap-2">
-                  <span className="animate-spin w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full"></span>
+                  <LoadingSpinner size="sm" className="text-purple-400" />
                   Analyzing My Portfolio...
                 </span>
               ) : (

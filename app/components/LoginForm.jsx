@@ -104,22 +104,22 @@ export default function LoginForm({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-2 sm:px-0">
-      <div className="w-full max-w-md sm:max-w-md space-y-8 p-4 sm:p-8 bg-white/90 rounded-lg shadow-md border border-border">
-        <div className="text-center">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
-            <span className="text-primary-foreground font-bold text-xl sm:text-2xl">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900 px-2 sm:px-0">
+      <div className="w-full max-w-md sm:max-w-md space-y-8 p-6 sm:p-8 glass-card animate-fade-in shadow-xl">
+        <div className="text-center animate-slide-down">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg hover-glow animate-pulse-subtle">
+            <span className="text-primary-foreground font-bold text-2xl sm:text-3xl">
               P
             </span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+          <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             {isForgotPassword
               ? "Reset Password"
               : isLogin
               ? "Welcome Back"
               : "Create Account"}
           </h2>
-          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
+          <p className="text-muted-foreground mt-3 text-sm sm:text-base">
             {isForgotPassword
               ? "Enter your email to receive a reset link"
               : isLogin
@@ -128,11 +128,11 @@ export default function LoginForm({ onLogin }) {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6 animate-slide-up">
           {isForgotPassword ? (
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-muted-foreground mb-2">
-                Email
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-foreground mb-2">
+                Email Address
               </label>
               <input
                 type="email"
@@ -140,15 +140,15 @@ export default function LoginForm({ onLogin }) {
                 placeholder="your@email.com"
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
-                className="w-full px-3 py-2 border border-input bg-background rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                className="input-enhanced w-full transition-all duration-200"
                 autoComplete="email"
               />
             </div>
           ) : (
             <>
               {!isLogin && (
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium text-muted-foreground mb-2">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-foreground mb-2">
                     Full Name
                   </label>
                   <input
@@ -157,15 +157,15 @@ export default function LoginForm({ onLogin }) {
                     placeholder="Your full name"
                     value={formData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
-                    className="w-full px-3 py-2 border border-input bg-background rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                    className="input-enhanced w-full transition-all duration-200"
                   />
                 </div>
               )}
 
               {!isLogin && (
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium text-muted-foreground mb-2">
-                    Email
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-foreground mb-2">
+                    Email Address
                   </label>
                   <input
                     type="email"
@@ -175,41 +175,41 @@ export default function LoginForm({ onLogin }) {
                     onChange={(e) =>
                       handleInputChange("email", e.target.value)
                     }
-                    className="w-full px-3 py-2 border border-input bg-background rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                    className="input-enhanced w-full transition-all duration-200"
                     autoComplete="email"
                   />
                 </div>
               )}
 
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-muted-foreground mb-2">
-                  Phone
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-foreground mb-2">
+                  Phone Number
                 </label>
                 <input
-                  type="phone"
+                  type="tel"
                   required
-                  placeholder="Phone"
+                  placeholder="Enter your phone number"
                   value={formData.phone}
                   onChange={(e) => handleInputChange("phone", e.target.value)}
-                  className="w-full px-3 py-2 border border-input bg-background rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                  className="input-enhanced w-full transition-all duration-200"
                   inputMode="tel"
                   autoComplete="tel"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-muted-foreground mb-2">
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-foreground mb-2">
                   Password
                 </label>
                 <input
                   type="password"
                   required
-                  placeholder="Your password"
+                  placeholder="Enter your password"
                   value={formData.password}
                   onChange={(e) =>
                     handleInputChange("password", e.target.value)
                   }
-                  className="w-full px-3 py-2 border border-input bg-background rounded-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                  className="input-enhanced w-full transition-all duration-200"
                   autoComplete={isLogin ? "current-password" : "new-password"}
                 />
               </div>
@@ -233,26 +233,35 @@ export default function LoginForm({ onLogin }) {
           )}
 
           {error && (
-            <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-xs sm:text-sm">
-              {error}
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 text-red-700 dark:text-red-400 rounded-xl text-sm animate-slide-down shadow-sm">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <span className="font-medium">{error}</span>
+              </div>
             </div>
           )}
 
           {successMessage && (
-            <div className="p-3 bg-green-100 border border-green-400 text-green-700 rounded-md text-xs sm:text-sm">
-              {successMessage}
+            <div className="p-4 bg-green-50 dark:bg-green-900/20 border-2 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400 rounded-xl text-sm animate-slide-down shadow-sm">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span className="font-medium">{successMessage}</span>
+              </div>
             </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-md text-xs sm:text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
+            className="btn-primary w-full inline-flex items-center justify-center px-6 py-3 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
             {loading ? (
               <>
                 <svg
-                  className="animate-spin -ml-1 mr-2 h-4 w-4"
+                  className="animate-spin -ml-1 mr-2 h-5 w-5"
                   fill="none"
                   viewBox="0 0 24 24"
                 >

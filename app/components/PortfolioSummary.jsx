@@ -34,23 +34,23 @@ export default function PortfolioSummary({ stocks }) {
   if (!summary) return null;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div className="bg-background border rounded-lg p-4 flex flex-col justify-between h-full min-w-0">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-slide-up">
+      <div className="card-enhanced hover-lift bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="min-w-0">
-            <p className="text-xs sm:text-sm text-muted-foreground truncate">
+            <p className="text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-400 mb-1">
               Total Invested
             </p>
-            <p className="text-xl sm:text-2xl font-bold truncate">
+            <p className="text-2xl sm:text-3xl font-bold text-blue-900 dark:text-blue-200">
               {summary.totalInvested.toLocaleString("en-US", {
                 style: "currency",
                 currency: "EGP",
               })}
             </p>
           </div>
-          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center shadow-lg hover-glow">
             <svg
-              className="w-4 h-4 text-blue-600"
+              className="w-6 h-6 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -66,22 +66,22 @@ export default function PortfolioSummary({ stocks }) {
         </div>
       </div>
 
-      <div className="bg-background border rounded-lg p-4 flex flex-col justify-between h-full min-w-0">
+      <div className="card-enhanced hover-lift bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="min-w-0">
-            <p className="text-xs sm:text-sm text-muted-foreground truncate">
+            <p className="text-xs sm:text-sm font-semibold text-green-700 dark:text-green-400 mb-1">
               Current Value
             </p>
-            <p className="text-xl sm:text-2xl font-bold truncate">
+            <p className="text-2xl sm:text-3xl font-bold text-green-900 dark:text-green-200">
               {summary.totalCurrentValue.toLocaleString("en-US", {
                 style: "currency",
                 currency: "EGP",
               })}
             </p>
           </div>
-          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 gradient-success rounded-xl flex items-center justify-center shadow-lg hover-glow">
             <svg
-              className="w-4 h-4 text-green-600"
+              className="w-6 h-6 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -97,15 +97,21 @@ export default function PortfolioSummary({ stocks }) {
         </div>
       </div>
 
-      <div className="bg-background border rounded-lg p-4 flex flex-col justify-between h-full min-w-0">
+      <div className={`card-enhanced hover-lift ${
+        summary.totalProfit >= 0 
+          ? "bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-800/20"
+          : "bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20"
+      }`}>
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="min-w-0">
-            <p className="text-xs sm:text-sm text-muted-foreground truncate">
+            <p className={`text-xs sm:text-sm font-semibold mb-1 ${
+              summary.totalProfit >= 0 ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"
+            }`}>
               Total P/L
             </p>
             <p
-              className={`text-xl sm:text-2xl font-bold truncate ${
-                summary.totalProfit >= 0 ? "text-green-600" : "text-red-600"
+              className={`text-2xl sm:text-3xl font-bold ${
+                summary.totalProfit >= 0 ? "text-green-900 dark:text-green-200" : "text-red-900 dark:text-red-200"
               }`}
             >
               {summary.totalProfit >= 0 ? "+" : ""}
@@ -115,10 +121,10 @@ export default function PortfolioSummary({ stocks }) {
               })}
             </p>
             <p
-              className={`text-xs sm:text-sm ${
+              className={`text-sm font-semibold mt-1 ${
                 summary.totalProfitPercent >= 0
-                  ? "text-green-600"
-                  : "text-red-600"
+                  ? "text-green-700 dark:text-green-400"
+                  : "text-red-700 dark:text-red-400"
               }`}
             >
               {summary.totalProfitPercent >= 0 ? "+" : ""}
@@ -126,14 +132,12 @@ export default function PortfolioSummary({ stocks }) {
             </p>
           </div>
           <div
-            className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-              summary.totalProfit >= 0 ? "bg-green-100" : "bg-red-100"
+            className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg hover-glow ${
+              summary.totalProfit >= 0 ? "gradient-success" : "gradient-error"
             }`}
           >
             <svg
-              className={`w-4 h-4 ${
-                summary.totalProfit >= 0 ? "text-green-600" : "text-red-600"
-              }`}
+              className="w-6 h-6 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -158,23 +162,23 @@ export default function PortfolioSummary({ stocks }) {
         </div>
       </div>
 
-      <div className="bg-background border rounded-lg p-4 flex flex-col justify-between h-full min-w-0">
+      <div className="card-enhanced hover-lift bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="min-w-0">
-            <p className="text-xs sm:text-sm text-muted-foreground truncate">
+            <p className="text-xs sm:text-sm font-semibold text-purple-700 dark:text-purple-400 mb-1">
               Portfolio
             </p>
-            <p className="text-xl sm:text-2xl font-bold truncate">
+            <p className="text-2xl sm:text-3xl font-bold text-purple-900 dark:text-purple-200">
               {summary.totalStocks} stocks
             </p>
-            <p className="text-xs sm:text-sm text-muted-foreground truncate">
+            <p className="text-sm text-purple-700 dark:text-purple-400 mt-1">
               {summary.profitableStocks} profitable, {summary.losingStocks}{" "}
               losing
             </p>
           </div>
-          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center shadow-lg hover-glow">
             <svg
-              className="w-4 h-4 text-purple-600"
+              className="w-6 h-6 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

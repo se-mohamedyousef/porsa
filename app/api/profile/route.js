@@ -28,7 +28,8 @@ export async function GET(request) {
 // POST - Save user profile
 export async function POST(request) {
   try {
-    const { userId, profile } = await request.json();
+    const body = await request.json();
+    const { userId, profile, name, phoneNumber, email } = body;
 
     if (!userId) {
       return NextResponse.json(
@@ -37,11 +38,14 @@ export async function POST(request) {
       );
     }
 
+    // Handle both formats: {userId, profile} or {userId, name, phoneNumber, email}
+    const profileData = profile || { name, phoneNumber, email };
+
     // If email is being updated, validate and check for duplicates
-    if (profile.email) {
+    if (profileData.email) {
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(profile.email)) {
+      if (!emailRegex.test(profileData.email)) {
         return NextResponse.json(
           { error: "Invalid email format" },
           { status: 400 }
@@ -52,9 +56,9 @@ export async function POST(request) {
       const currentUser = await getUser(userId);
       
       // Check if email is different from current one
-      if (currentUser && currentUser.email !== profile.email) {
+      if (currentUser && currentUser.email !== profileData.email) {
         // Check if email is already used by another user
-        const existingUserWithEmail = await getUserByEmail(profile.email);
+        const existingUserWithEmail = await getUserByEmail(profileData.email);
         if (existingUserWithEmail && existingUserWithEmail.id !== userId) {
           return NextResponse.json(
             { error: "Email already in use by another account" },
@@ -65,12 +69,12 @@ export async function POST(request) {
         // Update user record with new email
         await updateUser(userId, {
           ...currentUser,
-          email: profile.email,
+          email: profileData.email,
         });
       }
     }
 
-    const result = await saveUserProfile(userId, profile);
+    const result = await saveUserProfile(userId, profileData);
 
     if (result.success) {
       return NextResponse.json({ success: true });
