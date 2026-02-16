@@ -67,12 +67,12 @@ function MainApp() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-surface px-4">
         <div className="text-center w-full max-w-xs mx-auto animate-fade-in">
-          <div className="w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl animate-pulse-subtle hover-glow">
+          <div className="w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl animate-float">
             <span className="text-white font-bold text-2xl">P</span>
           </div>
-          <p className="text-muted-foreground text-lg font-medium animate-pulse">
+          <p className="text-muted-foreground text-lg font-medium animate-pulse-subtle">
             {t('loading')}
           </p>
         </div>
@@ -100,14 +100,14 @@ function MainApp() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-blue-900 dark:to-purple-900 flex flex-col animate-fade-in">
+    <div className="min-h-screen bg-gradient-surface flex flex-col animate-fade-in">
       <Header
         currentUser={currentUser}
         onLogout={handleLogout}
         onShowProfile={() => setShowProfile(true)}
       />
       <main
-        className={`flex-1 w-full ${CONTAINER_MAX_WIDTH} mx-auto px-2 md:px-6 lg:px-8 py-4 md:py-8`}
+        className={`flex-1 w-full ${CONTAINER_MAX_WIDTH} mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-10`}
       >
         <Dashboard
           currentUser={currentUser}
@@ -131,17 +131,17 @@ function Header({
   
   return (
     <>
-      <header className="glass-strong border-b border-white/20 dark:border-gray-700/30 w-full shadow-lg sticky top-0 z-50 animate-slide-down">
+      <header className="glass sticky top-0 z-50 border-b border-white/10 w-full animate-slide-down">
         <div
-          className={`w-full ${CONTAINER_MAX_WIDTH} mx-auto px-4 md:px-6 lg:px-8 py-3 md:py-5`}
+          className={`w-full ${CONTAINER_MAX_WIDTH} mx-auto px-4 md:px-6 lg:px-8 py-3`}
         >
           <div className="flex items-center justify-between gap-3 w-full">
             {/* Logo Area */}
-            <div className="flex items-center space-x-3 rtl:space-x-reverse">
-              <div className="w-9 h-9 md:w-10 md:h-10 gradient-primary rounded-xl flex items-center justify-center shadow-lg hover-glow transition-all cursor-pointer hover-lift">
+            <div className="flex items-center space-x-3 rtl:space-x-reverse cursor-pointer group" onClick={() => window.location.href = '/'}>
+              <div className="w-9 h-9 md:w-10 md:h-10 gradient-primary rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
                 <span className="text-white font-bold text-lg">P</span>
               </div>
-              <h1 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hidden sm:block">
+              <h1 className="text-xl md:text-2xl font-bold gradient-text hidden sm:block tracking-tight">
                 {t('porsa')}
               </h1>
             </div>
@@ -208,8 +208,8 @@ function Dashboard({
   currentUser: User;
 }) {
   return (
-    <div className="space-y-6 w-full">
-      <div className="bg-accent border border-blue-100 rounded-lg shadow-sm p-2 md:p-6 w-full">
+    <div className="space-y-6 w-full animate-slide-up">
+      <div className="w-full">
         <PortfolioTracker userId={currentUser?.id} />
       </div>
     </div>

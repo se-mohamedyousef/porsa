@@ -58,43 +58,37 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols }) 
   const potential = calculatePotential();
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-      <div className="glass-card max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-scale-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
+        onClick={onClose}
+      ></div>
+      <div className="glass-card max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-scale-in relative z-10 flex flex-col">
         {/* Header */}
-        <div className="sticky top-0 glass-strong border-b border-white/20 dark:border-gray-700/30 p-4 sm:p-6 flex items-center justify-between">
+        <div className="sticky top-0 glass border-b border-border p-5 flex items-center justify-between z-20">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Add Stock to Portfolio
+            <h2 className="text-2xl font-bold gradient-text">
+              Add Stock
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Search for Egyptian stocks and add to your portfolio
+            <p className="text-sm text-muted-foreground">
+              Search and add EGX stocks
             </p>
           </div>
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-xl glass hover:bg-red-100 dark:hover:bg-red-900/30 transition-all flex items-center justify-center group"
+            className="w-8 h-8 rounded-full bg-secondary hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center justify-center"
           >
-            <svg
-              className="w-6 h-6 text-muted-foreground group-hover:text-red-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-6 space-y-6">
+        <div className="p-6 space-y-6 overflow-y-auto">
           {/* Stock Search */}
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-foreground">
+          <div className="space-y-3">
+            <label className="text-sm font-semibold text-foreground">
               Search Stock
             </label>
             <StockSearch
@@ -102,10 +96,10 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols }) 
               existingSymbols={existingSymbols}
             />
             {selectedStock && (
-              <div className="mt-3 p-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+              <div className="p-4 bg-secondary/50 rounded-xl border border-border animate-fade-in">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-lg font-bold text-blue-700 dark:text-blue-400">
+                    <p className="text-lg font-bold text-primary">
                       {selectedStock.symbol}
                     </p>
                     <p className="text-sm text-muted-foreground">
@@ -127,10 +121,10 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols }) 
 
           {/* Quantity and Buy Price */}
           {selectedStock && (
-            <>
+            <div className="space-y-6 animate-slide-up">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-foreground">
+                  <label className="text-sm font-semibold text-foreground">
                     Quantity (Shares)
                   </label>
                   <input
@@ -140,11 +134,11 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols }) 
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
                     placeholder="100"
-                    className="input-enhanced w-full"
+                    className="input-enhanced"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-foreground">
+                  <label className="text-sm font-semibold text-foreground">
                     Buy Price (EGP)
                   </label>
                   <input
@@ -154,84 +148,40 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols }) 
                     value={buyPrice}
                     onChange={(e) => setBuyPrice(e.target.value)}
                     placeholder="Enter buy price"
-                    className="input-enhanced w-full"
+                    className="input-enhanced"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Current: {selectedStock.currentPrice?.toFixed(2)} EGP
-                  </p>
                 </div>
               </div>
 
               {/* Potential P/L Preview */}
               {potential && (
-                <div className="card-enhanced bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 space-y-3">
-                  <h3 className="font-bold text-foreground flex items-center gap-2">
-                    <svg
-                      className="w-5 h-5 text-green-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                      />
-                    </svg>
-                    Investment Preview
+                <div className="p-4 rounded-xl border border-border bg-gradient-surface space-y-3">
+                  <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
+                    <span className="text-primary">📊</span> Investment Preview
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-xs text-muted-foreground">
-                        Total Investment
-                      </p>
-                      <p className="text-lg font-bold text-foreground">
-                        {potential.invested.toLocaleString("en-US", {
-                          style: "currency",
-                          currency: "EGP",
-                        })}
+                      <p className="text-xs text-muted-foreground">Total Investment</p>
+                      <p className="text-base font-bold text-foreground">
+                        {potential.invested.toLocaleString("en-US", { style: "currency", currency: "EGP" })}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">
-                        Current Value
-                      </p>
-                      <p className="text-lg font-bold text-foreground">
-                        {potential.currentValue.toLocaleString("en-US", {
-                          style: "currency",
-                          currency: "EGP",
-                        })}
+                      <p className="text-xs text-muted-foreground">Est. Current Value</p>
+                      <p className="text-base font-bold text-foreground">
+                        {potential.currentValue.toLocaleString("en-US", { style: "currency", currency: "EGP" })}
                       </p>
                     </div>
-                    <div className="col-span-2 pt-2 border-t border-green-200 dark:border-green-800">
-                      <p className="text-xs text-muted-foreground mb-1">
-                        {potential.profit >= 0
-                          ? "Potential Profit"
-                          : "Current Loss"}
+                    <div className="col-span-2 pt-2 border-t border-border flex justify-between items-center">
+                      <p className="text-xs text-muted-foreground">
+                        {potential.profit >= 0 ? "Potential Profit" : "Current Loss"}
                       </p>
                       <div className="flex items-center gap-2">
-                        <p
-                          className={`text-xl font-bold ${
-                            potential.profit >= 0
-                              ? "text-green-700 dark:text-green-400"
-                              : "text-red-700 dark:text-red-400"
-                          }`}
-                        >
+                        <span className={`text-base font-bold ${potential.profit >= 0 ? "text-success" : "text-error"}`}>
                           {potential.profit >= 0 ? "+" : ""}
-                          {potential.profit.toLocaleString("en-US", {
-                            style: "currency",
-                            currency: "EGP",
-                          })}
-                        </p>
-                        <span
-                          className={`px-2 py-1 rounded-lg text-sm font-semibold ${
-                            potential.profit >= 0
-                              ? "bg-green-200 dark:bg-green-900/50 text-green-800 dark:text-green-300"
-                              : "bg-red-200 dark:bg-red-900/50 text-red-800 dark:text-red-300"
-                          }`}
-                        >
-                          {potential.profitPercent >= 0 ? "+" : ""}
+                          {potential.profit.toLocaleString("en-US", { style: "currency", currency: "EGP" })}
+                        </span>
+                        <span className={`badge ${potential.profit >= 0 ? "badge-success" : "badge-error"}`}>
                           {potential.profitPercent.toFixed(2)}%
                         </span>
                       </div>
@@ -239,64 +189,24 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols }) 
                   </div>
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 glass-strong border-t border-white/20 dark:border-gray-700/30 p-4 sm:p-6 flex gap-3">
+        <div className="sticky bottom-0 glass border-t border-border p-5 flex gap-3 z-20">
           <button
             onClick={onClose}
-            className="flex-1 px-6 py-3 rounded-xl border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all font-semibold"
+            className="flex-1 btn-secondary"
           >
             Cancel
           </button>
           <button
             onClick={handleAddStock}
             disabled={!selectedStock || !quantity || !buyPrice || isAdding}
-            className="btn-primary flex-1 px-6 py-3 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+            className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
           >
-            {isAdding ? (
-              <>
-                <svg
-                  className="animate-spin h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                Adding...
-              </>
-            ) : (
-              <>
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-                Add to Portfolio
-              </>
-            )}
+            {isAdding ? "Adding..." : "Add to Portfolio"}
           </button>
         </div>
       </div>
