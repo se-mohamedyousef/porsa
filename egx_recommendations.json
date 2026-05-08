@@ -1,0 +1,104 @@
+{
+  "timestamp": "2026-05-08T19:01:34.626099",
+  "stocks_analyzed": 52,
+  "recommendations": {
+    "short_term_buy": [
+      {
+        "symbol": "DCRCDelta Construction & Rebuilding Co.",
+        "current_price": 469.0,
+        "sector": "General",
+        "index": "Other",
+        "reason": "Strong positive momentum (+13.28%) with high volume. Technical breakout likely. General sector showing strength.",
+        "target_price": 506.52,
+        "expected_return_percent": 8.0,
+        "days_to_target": 16,
+        "risk": "MEDIUM",
+        "volume": "N/A",
+        "market_cap": "N/A"
+      },
+      {
+        "symbol": "CIRACairo For Investment And Real Estate Developments -CIRA Education",
+        "current_price": 5.21,
+        "sector": "General",
+        "index": "Other",
+        "reason": "Strong positive momentum (+9.9%) with high volume. Technical breakout likely. General sector showing strength.",
+        "target_price": 5.63,
+        "expected_return_percent": 8.0,
+        "days_to_target": 16,
+        "risk": "MEDIUM",
+        "volume": "N/A",
+        "market_cap": "N/A"
+      },
+      {
+        "symbol": "EEGS48271C018-EGPEgypt - South Africa for Communication",
+        "current_price": 0.76,
+        "sector": "General",
+        "index": "Other",
+        "reason": "Strong positive momentum (+9.09%) with high volume. Technical breakout likely. General sector showing strength.",
+        "target_price": 0.82,
+        "expected_return_percent": 8.0,
+        "days_to_target": 16,
+        "risk": "MEDIUM",
+        "volume": "N/A",
+        "market_cap": "N/A"
+      }
+    ],
+    "short_term_sell": [
+      {
+        "symbol": "AMPIالمؤشر",
+        "current_price": 0.56,
+        "sector": "General",
+        "index": "Other",
+        "reason": "Significant downward pressure (0.0%). Sentiment remains negative in General sector.",
+        "target_price": 0.53,
+        "expected_return_percent": -5.0,
+        "days_to_target": 11,
+        "risk": "HIGH",
+        "volume": "N/A",
+        "market_cap": "N/A"
+      },
+      {
+        "symbol": "ARABبورتو جروب",
+        "current_price": 0.71,
+        "sector": "General",
+        "index": "Other",
+        "reason": "Significant downward pressure (0.0%). Sentiment remains negative in General sector.",
+        "target_price": 0.67,
+        "expected_return_percent": -5.0,
+        "days_to_target": 11,
+        "risk": "HIGH",
+        "volume": "N/A",
+        "market_cap": "N/A"
+      }
+    ],
+    "long_term_buy": [
+      {
+        "symbol": "ETEL",
+        "current_price": 38.4,
+        "sector": "Telecom",
+        "index": "EGX30",
+        "reason": "Dominant market position in Telecom with consistent dividend yielding capabilities. Core holdings in Telecom sector.",
+        "target_price": 44.18,
+        "expected_return_percent": 15.0,
+        "days_to_target": 12,
+        "risk": "LOW",
+        "volume": "1.8M",
+        "market_cap": "Mega"
+      },
+      {
+        "symbol": "COMI",
+        "current_price": 82.5,
+        "sector": "Banking",
+        "index": "EGX30",
+        "reason": "Strong banking fundamentals and robust balance sheet. Core holding for EGX exposure. Leading Banking sector stock.",
+        "target_price": 92.4,
+        "expected_return_percent": 12.0,
+        "days_to_target": 24,
+        "risk": "LOW",
+        "volume": "2.5M",
+        "market_cap": "Mega"
+      }
+    ],
+    "market_analysis": "The market is showing selective momentum in high-cap stocks. Volatility remains moderate with strong support in the banking and telecom sectors."
+  }
+}

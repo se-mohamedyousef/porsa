@@ -1,18 +1,11 @@
 "use client";
 
-import PortfolioTracker from "./components/PortfolioTracker";
+import SimpleDashboard from "./components/SimpleDashboard";
 import LoginForm from "./components/LoginForm";
 import ResetPasswordForm from "./components/ResetPasswordForm";
-import ProfilePage from "./components/ProfilePage";
 import LoadingSpinner from "./components/LoadingSpinner";
-import ThemeToggle from "./components/ThemeToggle";
-import LanguageToggle from "./components/LanguageToggle";
-import { LanguageProvider, useLanguage } from "./context/LanguageContext";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-
-// Responsive container max width for desktop, tablet, and mobile
-const CONTAINER_MAX_WIDTH = "max-w-7xl"; // wider for desktop
 
 // Define a type for the user object to avoid 'never' type errors
 type User = {
@@ -22,14 +15,8 @@ type User = {
   [key: string]: any;
 };
 
-import SidebarMenu from "./components/SidebarMenu";
-
 function HomeContent() {
-  return (
-    <LanguageProvider>
-      <MainApp />
-    </LanguageProvider>
-  );
+  return <MainApp />;
 }
 
 function MainApp() {
@@ -38,8 +25,6 @@ function MainApp() {
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showProfile, setShowProfile] = useState(false);
-  const { t } = useLanguage();
 
   // Check for existing user session on mount
   useEffect(() => {
@@ -62,22 +47,10 @@ function MainApp() {
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem("porsaCurrentUser");
-    setShowProfile(false);
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-surface px-4">
-        <div className="text-center w-full max-w-xs mx-auto animate-fade-in">
-          <div className="w-16 h-16 gradient-primary rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl animate-float">
-            <span className="text-white font-bold text-2xl">P</span>
-          </div>
-          <p className="text-muted-foreground text-lg font-medium animate-pulse-subtle">
-            {t('loading')}
-          </p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   // Show reset password form if token is present
@@ -89,143 +62,16 @@ function MainApp() {
     return <LoginForm onLogin={handleLogin} />;
   }
 
-  // Show profile page if requested
-  if (showProfile) {
-    return (
-      <ProfilePage
-        currentUser={currentUser}
-        onBack={() => setShowProfile(false)}
-      />
-    );
-  }
-
+  // Show simplified dashboard
   return (
-    <div className="min-h-screen bg-gradient-surface flex flex-col animate-fade-in">
-      <Header
-        currentUser={currentUser}
-        onLogout={handleLogout}
-        onShowProfile={() => setShowProfile(true)}
-      />
-      <main
-        className={`flex-1 w-full ${CONTAINER_MAX_WIDTH} mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-10`}
-      >
-        <Dashboard
-          currentUser={currentUser}
-        />
-      </main>
-    </div>
+    <SimpleDashboard userId={currentUser?.id} />
   );
 }
 
-function Header({
-  currentUser,
-  onLogout,
-  onShowProfile,
-}: {
-  currentUser: User;
-  onLogout: () => void;
-  onShowProfile: () => void;
-}) {
-  const { t } = useLanguage();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
-  return (
-    <>
-      <header className="glass sticky top-0 z-50 border-b border-white/10 w-full animate-slide-down">
-        <div
-          className={`w-full ${CONTAINER_MAX_WIDTH} mx-auto px-4 md:px-6 lg:px-8 py-3`}
-        >
-          <div className="flex items-center justify-between gap-3 w-full">
-            {/* Logo Area */}
-            <div className="flex items-center space-x-3 rtl:space-x-reverse cursor-pointer group" onClick={() => window.location.href = '/'}>
-              <div className="w-9 h-9 md:w-10 md:h-10 gradient-primary rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
-                <span className="text-white font-bold text-lg">P</span>
-              </div>
-              <h1 className="text-xl md:text-2xl font-bold gradient-text hidden sm:block tracking-tight">
-                {t('porsa')}
-              </h1>
-            </div>
-
-            {/* Desktop Actions (Hidden on Mobile) */}
-            <div className="hidden md:flex items-center gap-4 rtl:space-x-reverse">
-                <LanguageToggle />
-                <ThemeToggle />
-                
-                {currentUser && (
-                <div className="flex items-center space-x-2 rtl:space-x-reverse pl-2 border-l border-gray-200 dark:border-gray-700 rtl:border-l-0 rtl:border-r rtl:pl-0 rtl:pr-2">
-                    <div className="text-sm text-muted-foreground truncate max-w-[120px]">
-                     {currentUser.name || currentUser.phone}
-                    </div>
-                    <button
-                    onClick={onShowProfile}
-                    className="ml-2 text-sm text-blue-600 hover:text-blue-800 transition-colors font-medium"
-                    >
-                    {t('profile')}
-                    </button>
-                    <button
-                    onClick={onLogout}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                    {t('logout')}
-                    </button>
-                </div>
-                )}
-            </div>
-
-            {/* Mobile Burger Button (Visible on Mobile) */}
-            <div className="flex md:hidden items-center gap-3">
-               <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                 {currentUser?.name?.split(' ')[0] || 'User'}
-               </span>
-               <button 
-                 onClick={() => setIsSidebarOpen(true)}
-                 className="p-2 rounded-lg bg-gray-100/50 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700/50 transition-colors"
-               >
-                 <svg className="w-6 h-6 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16m-7 6h7" />
-                 </svg>
-               </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Sidebar Component */}
-      <SidebarMenu 
-        isOpen={isSidebarOpen} 
-        onClose={() => setIsSidebarOpen(false)}
-        currentUser={currentUser}
-        onLogout={onLogout}
-        onShowProfile={onShowProfile}
-      />
-    </>
-  );
-}
-
-function Dashboard({
-  currentUser,
-}: {
-  currentUser: User;
-}) {
-  return (
-    <div className="space-y-6 w-full animate-slide-up">
-      <div className="w-full">
-        <PortfolioTracker userId={currentUser?.id} />
-      </div>
-    </div>
-  );
-}
 
 export default function Home() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-100">
-      <div className="text-center">
-        <div className="w-14 h-14 sm:w-16 sm:h-16 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4 animate-pulse">
-          <span className="text-primary-foreground font-bold text-xl sm:text-2xl">P</span>
-        </div>
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    </div>}>
+    <Suspense fallback={<LoadingSpinner />}>
       <HomeContent />
     </Suspense>
   );

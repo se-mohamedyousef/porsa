@@ -181,7 +181,23 @@ export function useUserData(userId) {
   // Add stock to portfolio
   const addStock = useCallback(
     async (stockData) => {
-      const newPortfolio = [...portfolio, stockData];
+      // Ensure all required fields are present
+      const completeStock = {
+        id: `${stockData.symbol}-${Date.now()}`, // Generate unique ID
+        symbol: stockData.symbol,
+        quantity: parseFloat(stockData.quantity) || 0,
+        buyPrice: parseFloat(stockData.buyPrice) || 0,
+        currentPrice: parseFloat(stockData.buyPrice) || 0, // Initialize with buy price
+        purchaseDate: stockData.purchaseDate || new Date().toISOString().split('T')[0],
+        notes: stockData.notes || '',
+        investmentType: stockData.investmentType || 'long-term', // Add investment type
+      };
+      
+      // Calculate profit fields
+      completeStock.profit = (completeStock.currentPrice * completeStock.quantity) - (completeStock.buyPrice * completeStock.quantity);
+      completeStock.profitPercent = completeStock.buyPrice > 0 ? (completeStock.profit / (completeStock.buyPrice * completeStock.quantity)) * 100 : 0;
+      
+      const newPortfolio = [...portfolio, completeStock];
       await updatePortfolio(newPortfolio);
     },
     [portfolio, updatePortfolio]

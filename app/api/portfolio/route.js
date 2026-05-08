@@ -25,10 +25,11 @@ export async function GET(request) {
   }
 }
 
-// POST - Save user's portfolio data
+// POST - Save user's portfolio data or handle portfolio actions
 export async function POST(request) {
   try {
-    const { userId, portfolio } = await request.json();
+    const body = await request.json();
+    const { userId, action, portfolio, stock } = body;
 
     if (!userId) {
       return NextResponse.json(
@@ -37,6 +38,50 @@ export async function POST(request) {
       );
     }
 
+    // Handle adding to watchlist
+    if (action === 'add_to_watchlist' && stock) {
+      try {
+        const currentPortfolio = await getUserPortfolio(userId);
+        const watchlist = currentPortfolio.watchlist || [];
+        
+        // Check if already in watchlist
+        if (!watchlist.find(s => s.symbol === stock.symbol)) {
+          watchlist.push({
+            symbol: stock.symbol,
+            addedAt: new Date().toISOString(),
+            currentPrice: stock.currentPrice,
+            sector: stock.sector,
+            recommendation: stock.recommendation
+          });
+          
+          // Save updated portfolio with watchlist
+          await saveUserPortfolio(userId, {
+            ...currentPortfolio,
+            watchlist
+          });
+
+          return NextResponse.json({ 
+            success: true, 
+            message: `${stock.symbol} added to watchlist`,
+            watchlist 
+          });
+        } else {
+          return NextResponse.json({ 
+            success: true, 
+            message: `${stock.symbol} already in watchlist`,
+            watchlist 
+          });
+        }
+      } catch (error) {
+        console.error('Error adding to watchlist:', error);
+        return NextResponse.json(
+          { error: 'Failed to add to watchlist' },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Default behavior - save portfolio
     const result = await saveUserPortfolio(userId, portfolio);
 
     if (result.success) {

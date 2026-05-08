@@ -9,8 +9,25 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useTheme } from "@/app/context/ThemeContext";
+import { useMemo } from "react";
+
+// Helper to get CSS variable value
+const getCSSVariable = (variable) => {
+  if (typeof window === 'undefined') return '#000000';
+  return getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
+};
 
 export default function PortfolioChart({ history }) {
+  const { theme } = useTheme();
+  
+  const colors = useMemo(() => ({
+    axisStroke: getCSSVariable('--muted-foreground'),
+    lineStroke: getCSSVariable('--line-price'),
+    tooltipBg: getCSSVariable('--tooltip-bg'),
+    tooltipShadow: getCSSVariable('--tooltip-shadow'),
+  }), [theme]);
+
   if (!history || history.length < 2) {
     return (
       <div className="card-enhanced mb-6 p-8 text-center text-muted-foreground bg-muted/20">
@@ -30,7 +47,7 @@ export default function PortfolioChart({ history }) {
   }));
 
   return (
-    <div className="card-enhanced mb-6 animate-fade-in bg-white dark:bg-black/20">
+    <div className="card-enhanced mb-6 animate-fade-in bg-background dark:bg-muted/30">
       <div className="mb-4">
         <h3 className="text-lg font-bold flex items-center gap-2">
           <span>📉</span> Portfolio Performance
@@ -46,13 +63,13 @@ export default function PortfolioChart({ history }) {
             <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
             <XAxis 
               dataKey="date" 
-              stroke="#888888" 
+              stroke={colors.axisStroke}
               fontSize={12} 
               tickLine={false} 
               axisLine={false} 
             />
             <YAxis 
-              stroke="#888888" 
+              stroke={colors.axisStroke}
               fontSize={12} 
               tickLine={false} 
               axisLine={false}
@@ -60,17 +77,17 @@ export default function PortfolioChart({ history }) {
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: "rgba(255, 255, 255, 0.9)",
+                backgroundColor: colors.tooltipBg,
                 borderRadius: "8px",
                 border: "none",
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                boxShadow: colors.tooltipShadow,
               }}
               formatter={(value) => [`${value.toLocaleString()} EGP`, "Value"]}
             />
             <Line
               type="monotone"
               dataKey="value"
-              stroke="#2563eb"
+              stroke={colors.lineStroke}
               strokeWidth={2}
               activeDot={{ r: 6 }}
               dot={false}

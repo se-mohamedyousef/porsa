@@ -35,7 +35,11 @@ export async function POST(request) {
     } catch (kvError) {
       console.error("KV getUserByPhone error:", kvError);
       return NextResponse.json(
-        { error: "Database connection error. Please check KV configuration." },
+        { 
+          error: "Database connection error",
+          details: kvError.message,
+          type: "KV_CONNECTION_ERROR"
+        },
         { status: 500 }
       );
     }
@@ -104,8 +108,23 @@ export async function POST(request) {
     }
   } catch (error) {
     console.error("Registration error:", error);
+    console.error("Error stack:", error.stack);
+    
+    // Provide more specific error messages based on error type
+    let errorMessage = "Registration failed";
+    
+    if (error.message?.includes("fetch")) {
+      errorMessage = "Database connection failed - KV service unavailable";
+    } else if (error.message?.includes("ENOTFOUND")) {
+      errorMessage = "Network error - unable to reach database service";
+    }
+    
     return NextResponse.json(
-      { error: `Registration failed: ${error.message}` },
+      { 
+        error: errorMessage,
+        details: error.message,
+        code: "REGISTRATION_ERROR"
+      },
       { status: 500 }
     );
   }

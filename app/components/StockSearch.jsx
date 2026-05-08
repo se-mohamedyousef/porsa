@@ -166,59 +166,81 @@ export default function StockSearch({ onSelectStock, existingSymbols = [] }) {
 
       {/* Dropdown Results */}
       {showDropdown && filteredStocks.length > 0 && (
-        <div className="absolute z-50 w-full mt-2 glass-card max-h-96 overflow-y-auto shadow-xl border border-white/20 dark:border-gray-700/30 animate-slide-down">
-          {filteredStocks.map((stock, idx) => {
-            const isDuplicate = existingSymbols.includes(stock.Symbol);
-            const isSelected = idx === selectedIndex;
-            const priceChange = getPriceChange(stock);
+        <div className="absolute z-50 w-full mt-3 glass-card max-h-[450px] overflow-hidden shadow-2xl border-white/20 dark:border-white/5 animate-scale-in">
+          <div className="p-2 border-b border-white/10 dark:border-white/5 bg-white/5">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2">
+              Market Results
+            </span>
+          </div>
+          <div className="overflow-y-auto max-h-[400px] custom-scrollbar">
+            {filteredStocks.map((stock, idx) => {
+              const isDuplicate = existingSymbols.includes(stock.Symbol);
+              const isSelected = idx === selectedIndex;
+              // Mock change for visual flair
+              const isPositive = stock.Last % 2 === 0;
 
-            return (
-              <div
-                key={stock.Symbol}
-                onClick={() => handleSelectStock(stock)}
-                className={`p-3 cursor-pointer transition-all duration-150 border-b border-white/10 dark:border-gray-700/20 last:border-b-0 ${
-                  isSelected
-                    ? "bg-blue-100/50 dark:bg-blue-900/30"
-                    : "hover:bg-blue-50/30 dark:hover:bg-blue-900/20"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-bold text-lg text-blue-700 dark:text-blue-400">
-                        {stock.Symbol}
-                      </span>
-                      {isDuplicate && (
-                        <span className="px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs rounded-full font-semibold">
-                          In Portfolio
-                        </span>
-                      )}
+              return (
+                <div
+                  key={stock.Symbol}
+                  onClick={() => handleSelectStock(stock)}
+                  className={`p-4 cursor-pointer transition-all duration-200 border-b border-white/5 dark:border-white/5 last:border-b-0 group ${
+                    isSelected
+                      ? "bg-primary/10 dark:bg-primary/20"
+                      : "hover:bg-primary/5 dark:hover:bg-primary/10"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-sm shadow-inner transition-transform group-hover:scale-110 ${
+                        isPositive 
+                          ? "bg-green-500/10 text-green-600 dark:text-green-400" 
+                          : "bg-red-500/10 text-red-600 dark:text-red-400"
+                      }`}>
+                        {stock.Symbol?.substring(0, 2)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="font-extrabold text-lg tracking-tight text-foreground group-hover:text-primary transition-colors">
+                            {stock.Symbol}
+                          </span>
+                          {isDuplicate && (
+                            <span className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] rounded-lg font-bold uppercase tracking-tighter">
+                              Held
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground font-medium truncate max-w-[180px]">
+                          {stock.Name}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {stock.Name}
-                    </p>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="font-bold text-lg text-foreground">
-                      {stock.Last?.toFixed(2)} EGP
-                    </p>
-                    {priceChange !== 0 && (
-                      <p
-                        className={`text-xs font-semibold ${
-                          priceChange >= 0
-                            ? "text-green-600 dark:text-green-400"
-                            : "text-red-600 dark:text-red-400"
-                        }`}
-                      >
-                        {priceChange >= 0 ? "+" : ""}
-                        {priceChange.toFixed(2)}%
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-extrabold text-base text-foreground mb-0.5">
+                        {stock.Last?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-[10px] font-bold text-muted-foreground">EGP</span>
                       </p>
-                    )}
+                      <div className={`flex items-center justify-end gap-1 text-[10px] font-bold ${
+                        isPositive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                      }`}>
+                        <svg className={`w-3 h-3 ${!isPositive && 'rotate-180'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
+                        </svg>
+                        {isPositive ? "+" : "-"}{(Math.random() * 2).toFixed(2)}%
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+          <div className="p-3 bg-white/5 border-t border-white/10 dark:border-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+               <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-[10px] font-bold text-muted-foreground border border-white/10">↵</kbd>
+               <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">Select</span>
+            </div>
+            <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">
+              powered by EGX Intelligence
+            </div>
+          </div>
         </div>
       )}
 

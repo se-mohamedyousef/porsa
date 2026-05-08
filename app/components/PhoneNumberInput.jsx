@@ -58,14 +58,14 @@ export default function PhoneNumberInput({
         value={value}
         onChange={handleChange}
         className={`w-full px-3 py-2 border rounded-md text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent ${
-          isValid ? "border-input bg-background" : "border-red-500 bg-red-50"
+          isValid ? "border-input bg-background" : "border-error bg-error/10 dark:bg-error/20"
         } transition-colors`}
         style={{
           fontSize: "16px", // Ensures iOS zooms less on input
         }}
       />
       {!isValid && value && (
-        <p className="text-xs sm:text-sm text-red-500 mt-1">
+        <p className="text-xs sm:text-sm text-error mt-1">
           Please enter a valid Egyptian phone number (10-11 digits)
         </p>
       )}

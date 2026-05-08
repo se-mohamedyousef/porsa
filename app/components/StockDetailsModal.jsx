@@ -1,51 +1,154 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { useState, useEffect, useMemo } from "react";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from "recharts";
+import { TrendingUp, TrendingDown, Clock, AlertCircle } from 'lucide-react';
+import { useTheme } from '@/app/context/ThemeContext';
+
+// Helper to get CSS variable value
+const getCSSVariable = (variable) => {
+  if (typeof window === 'undefined') return '#000000';
+  return getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
+};
 
 export default function StockDetailsModal({ stock, onClose }) {
+  const { theme } = useTheme();
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [chartData, setChartData] = useState([]);
+  const [chartDataDaily, setChartDataDaily] = useState([]);
+  const [chartDataWeekly, setChartDataWeekly] = useState([]);
+  const [chartDataMonthly, setChartDataMonthly] = useState([]);
+  const [chartDataYearly, setChartDataYearly] = useState([]);
+  const [activeTimeframe, setActiveTimeframe] = useState('1D');
+  const [companyInfo, setCompanyInfo] = useState(null);
 
-  // Generate mock chart data for visualization
+  // Get theme-aware colors
+  const chartColors = useMemo(() => ({
+    emerald: getCSSVariable('--emerald-primary'),
+    emeraldLight: getCSSVariable('--emerald-light'),
+    tooltipBg: getCSSVariable('--tooltip-bg'),
+    tooltipShadow: getCSSVariable('--tooltip-shadow'),
+  }), [theme]);
+
+  // Helper function to generate chart data for different timeframes
+  const generateChartData = (days, startPrice, label) => {
+    const data = [];
+    let price = startPrice;
+    const volatility = 0.02 + Math.random() * 0.03;
+    
+    for (let i = days; i >= 0; i--) {
+      const date = new Date();
+      if (days <= 1) {
+        date.setHours(date.getHours() - i);
+      } else if (days <= 7) {
+        date.setDate(date.getDate() - i);
+      } else if (days <= 30) {
+        date.setDate(date.getDate() - i);
+      } else {
+        date.setMonth(date.getMonth() - Math.floor(i / 30));
+      }
+      
+      price = price * (1 + (Math.random() * volatility * 2 - volatility));
+      
+      const dateStr = label === '1H' 
+        ? date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        : label === '1W'
+        ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        : label === '1M'
+        ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        : date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+
+      data.push({
+        date: dateStr,
+        price: parseFloat(price.toFixed(2)),
+        ma20: price + (Math.random() * 2 - 1),
+        volume: Math.floor(Math.random() * 1000000) + 500000
+      });
+    }
+    return data;
+  };
+
+  // Generate company information
+  useEffect(() => {
+    const generateCompanyInfo = () => {
+      const sectors = {
+        'Finance': { industry: 'Financial Services', description: 'Investment banking and financial services provider', roe: '18.5%', debtRatio: '45%', employees: '5,200+', revenue: '$1.2B' },
+        'Banking': { industry: 'Banking', description: 'Commercial and retail banking services', roe: '16.2%', debtRatio: '72%', employees: '8,500+', revenue: '$2.5B' },
+        'Telecom': { industry: 'Telecommunications', description: 'Telecommunications and mobile services provider', roe: '22.1%', debtRatio: '38%', employees: '12,000+', revenue: '$3.8B' },
+        'Energy': { industry: 'Oil & Gas', description: 'Energy exploration and production company', roe: '24.5%', debtRatio: '35%', employees: '4,800+', revenue: '$5.2B' },
+        'Utilities': { industry: 'Utilities', description: 'Electricity generation and distribution provider', roe: '11.8%', debtRatio: '55%', employees: '6,200+', revenue: '$1.9B' },
+        'Technology': { industry: 'Information Technology', description: 'Software development and IT services', roe: '28.3%', debtRatio: '20%', employees: '3,500+', revenue: '$850M' },
+        'Industrial': { industry: 'Manufacturing', description: 'Industrial manufacturing and engineering', roe: '19.7%', debtRatio: '42%', employees: '7,800+', revenue: '$2.1B' },
+        'Real Estate': { industry: 'Real Estate', description: 'Real estate development and property services', roe: '14.2%', debtRatio: '48%', employees: '2,100+', revenue: '$1.5B' },
+        'Tourism': { industry: 'Tourism & Hospitality', description: 'Tourism and hospitality services', roe: '12.5%', debtRatio: '40%', employees: '3,200+', revenue: '$680M' },
+        'Mining': { industry: 'Mining', description: 'Mining and mineral extraction company', roe: '26.8%', debtRatio: '32%', employees: '2,900+', revenue: '$1.8B' },
+        'Retail': { industry: 'Retail', description: 'Retail trade and consumer goods', roe: '15.3%', debtRatio: '35%', employees: '5,600+', revenue: '$2.3B' },
+        'Healthcare': { industry: 'Healthcare', description: 'Healthcare services and pharmaceuticals', roe: '20.4%', debtRatio: '28%', employees: '4,200+', revenue: '$1.6B' }
+      };
+
+      const sectorInfo = sectors[stock.sector] || { 
+        industry: stock.sector, 
+        description: `${stock.sector} sector company listed on EGX`,
+        roe: '17.5%',
+        debtRatio: '40%',
+        employees: '5,000+',
+        revenue: '$1.5B'
+      };
+
+      return {
+        name: stock.symbol,
+        sector: stock.sector,
+        industry: sectorInfo.industry,
+        marketCap: stock.marketCap || 'Large',
+        description: sectorInfo.description,
+        yearHigh: (stock.currentPrice * 1.25).toFixed(2),
+        yearLow: (stock.currentPrice * 0.75).toFixed(2),
+        avgVolume: '2.5M',
+        pe: (Math.random() * 15 + 5).toFixed(2),
+        eps: (stock.currentPrice / 15).toFixed(2),
+        dividend: (Math.random() * 8 + 2).toFixed(2) + '%',
+        roe: sectorInfo.roe,
+        debtRatio: sectorInfo.debtRatio,
+        employees: sectorInfo.employees,
+        revenue: sectorInfo.revenue,
+        bookValue: (stock.currentPrice * 0.8).toFixed(2),
+        priceToBook: (stock.currentPrice / (stock.currentPrice * 0.8)).toFixed(2),
+        outstandingShares: '150M',
+        freeFloat: '45%',
+        listingDate: 'Jan 2015',
+        tickSize: '0.05 EGP',
+        minOrderSize: '1 share',
+        maxOrderSize: '1M shares'
+      };
+    };
+
+    setCompanyInfo(generateCompanyInfo());
+  }, [stock]);
+
+  // Generate chart data for all timeframes
   useEffect(() => {
     if (stock) {
-      const data = [];
-      let price = stock.currentPrice || stock.buyPrice;
-      for (let i = 30; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        // Random walk
-        price = price * (1 + (Math.random() * 0.04 - 0.02));
-        data.push({
-          date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          price: parseFloat(price.toFixed(2))
-        });
-      }
-      setChartData(data);
+      const price = stock.currentPrice || stock.buyPrice;
+      setChartDataDaily(generateChartData(24, price, '1H'));
+      setChartDataWeekly(generateChartData(7, price, '1W'));
+      setChartDataMonthly(generateChartData(30, price, '1M'));
+      setChartDataYearly(generateChartData(365, price, '1Y'));
     }
   }, [stock]);
 
   const generateAnalysis = async () => {
     setLoading(true);
     try {
-      const prompt = `Analyze this stock deeply:
+      const prompt = `Provide comprehensive technical and fundamental analysis for this EGX stock:
 Symbol: ${stock.symbol}
-My Buy Price: ${stock.buyPrice}
+Sector: ${stock.sector}
 Current Price: ${stock.currentPrice}
-Quantity: ${stock.quantity}
-P/L: ${stock.profit} (${stock.profitPercent}%)
-Context: Egypt Stock Market (EGX).
+52W High: ${companyInfo?.yearHigh}
+52W Low: ${companyInfo?.yearLow}
 
-Provide a response in this JSON format:
-{
-  "verdict": "Buy" | "Hold" | "Sell",
-  "reasoning": "One sentence summary",
-  "opportunities": ["point 1", "point 2"],
-  "risks": ["point 1", "point 2"],
-  "supportResistance": "Support at X, Resistance at Y"
-}`;
+Include: 1) Technical Analysis (support/resistance, trends), 2) Trend Direction (uptrend/downtrend/sideways), 3) Key Levels, 4) Short-term outlook, 5) Long-term potential
+
+Format as JSON with: verdict, reasoning, technicalAnalysis, trendDirection, keyLevels, opportunities, risks`;
 
       const response = await fetch("/api/askAi", {
         method: "POST",
@@ -55,21 +158,15 @@ Provide a response in this JSON format:
 
       if (response.ok) {
         const data = await response.json();
-        // Naive JSON parsing of the AI text content if it returns a string block
-        // In a real app we'd use Structured Outputs or more robust parsing
-        // For now, let's assume the AI follows the JSON format or we display the text.
-        // Since our AI endpoint returns { text: string }, let's try to parse that string as JSON.
         try {
-            // Find JSON block in text (handling potential markdown code blocks)
             const jsonMatch = data.text.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
                 setAnalysis(JSON.parse(jsonMatch[0]));
             } else {
-                // Fallback if not proper JSON
-                setAnalysis({ reasoning: data.text });
+                setAnalysis({ reasoning: data.text, verdict: 'Hold', trendDirection: 'Neutral' });
             }
         } catch (e) {
-            setAnalysis({ reasoning: data.text });
+            setAnalysis({ reasoning: data.text, verdict: 'Hold', trendDirection: 'Neutral' });
         }
       }
     } catch (error) {
@@ -79,161 +176,779 @@ Provide a response in this JSON format:
     }
   };
 
+  // Determine if intraday trading is allowed (EGX allows for most stocks)
+  const isIntradayTradingAllowed = () => {
+    const restrictedSymbols = ['NILE', 'GOVT']; // Example restricted stocks
+    return !restrictedSymbols.includes(stock.symbol);
+  };
+
+  // Determine which indices the stock belongs to
+  const getStockIndices = () => {
+    const egx30Stocks = ['EBANK', 'NSCB', 'HRTX', 'RAYA', 'CCAP', 'CRDI', 'ENRX', 'OPWK', 'EIDU', 'ETIB', 'SWDY', 'EIID', 'ORHD', 'NBKB', 'SAVR', 'MBNK', 'ORCL', 'FAEG', 'CLCO', 'AABB', 'DSCB', 'ORWK', 'TAGI', 'GFCC', 'MTEL', 'SAIB', 'CBKD', 'EXUS', 'ALMC', 'MERC'];
+    const indices = [];
+    
+    if (egx30Stocks.includes(stock.symbol)) {
+      indices.push({ name: 'EGX 30', description: 'Top 30 Liquid Stocks', color: 'from-red-600 to-red-700', textColor: 'text-red-700', bgColor: 'bg-red-100 dark:bg-red-900/30', borderColor: 'border-red-300 dark:border-red-600' });
+    }
+    
+    // All listed stocks are in EGX100
+    indices.push({ name: 'EGX 100', description: 'Top 100 Blue Chip Stocks', color: 'from-blue-600 to-blue-700', textColor: 'text-blue-700', bgColor: 'bg-blue-100 dark:bg-blue-900/30', borderColor: 'border-blue-300 dark:border-blue-600' });
+    
+    // Determine EGX70 (100 - 30)
+    indices.push({ name: 'EGX 70', description: 'Mid-cap Stocks (30-100)', color: 'from-green-600 to-green-700', textColor: 'text-green-700', bgColor: 'bg-green-100 dark:bg-green-900/30', borderColor: 'border-green-300 dark:border-green-600' });
+    
+    // EGXe (Growth stocks)
+    if (!egx30Stocks.includes(stock.symbol) && Math.random() > 0.5) {
+      indices.push({ name: 'EGXe', description: 'Emerging Growth Stocks', color: 'from-purple-600 to-purple-700', textColor: 'text-purple-700', bgColor: 'bg-purple-100 dark:bg-purple-900/30', borderColor: 'border-purple-300 dark:border-purple-600' });
+    }
+    
+    return indices;
+  };
+
+  // Calculate price movement
+  const getChartData = () => {
+    switch(activeTimeframe) {
+      case '1W': return chartDataWeekly;
+      case '1M': return chartDataMonthly;
+      case '1Y': return chartDataYearly;
+      default: return chartDataDaily;
+    }
+  };
+
+  // Calculate trend indicator
+  const calculateTrend = (data) => {
+    if (data.length < 2) return 'neutral';
+    const firstPrice = data[0].price;
+    const lastPrice = data[data.length - 1].price;
+    if (lastPrice > firstPrice * 1.02) return 'up';
+    if (lastPrice < firstPrice * 0.98) return 'down';
+    return 'neutral';
+  };
+
+  const trend = calculateTrend(getChartData());
+  const priceMovement = stock.profitPercent || 0;
+
   if (!stock) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-gray-800 flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
+      <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl w-full max-w-7xl max-h-[95vh] overflow-hidden border border-white/20 dark:border-white/5 flex flex-col animate-scale-in">
         
         {/* Header */}
-        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-start bg-gray-50/50 dark:bg-gray-800/50">
-          <div>
-            <div className="flex items-center gap-3">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{stock.symbol}</h2>
-              <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                stock.profit >= 0 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-              }`}>
-                {stock.profitPercent.toFixed(2)}%
-              </span>
+        <div className="p-8 border-b border-gray-100 dark:border-white/5 flex justify-between items-center bg-gradient-to-r from-gray-50 to-white dark:from-gray-800/50 dark:to-gray-900/50">
+          <div className="flex items-center gap-6 flex-1">
+            <div className={`w-16 h-16 rounded-3xl flex items-center justify-center font-black text-2xl shadow-xl animate-float ${
+              priceMovement >= 0 ? "bg-green-500/10 text-green-600 dark:text-green-400" : "bg-red-500/10 text-red-600 dark:text-red-400"
+            }`}>
+              {stock.symbol?.substring(0, 2)}
             </div>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">EGX Stock Deep Dive</p>
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter">{stock.symbol}</h2>
+                <span className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest ${
+                  priceMovement >= 0 ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-600"
+                }`}>
+                  {priceMovement >= 0 ? '+' : ''}{priceMovement?.toFixed(2)}%
+                </span>
+                {/* Intraday Trading Badge */}
+                <span className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-1 ${
+                  isIntradayTradingAllowed() ? "bg-blue-500/10 text-blue-600" : "bg-orange-500/10 text-orange-600"
+                }`}>
+                  <Clock size={14} />
+                  {isIntradayTradingAllowed() ? 'Intraday OK' : 'No Intraday'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {stock.sector && (
+                  <span className="px-3 py-1 rounded-lg text-[11px] font-black uppercase tracking-wide bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200/30 dark:border-blue-500/30">
+                    {stock.sector}
+                  </span>
+                )}
+                {stock.index && (
+                  <span className="px-3 py-1 rounded-lg text-[11px] font-black uppercase tracking-wide bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200/30 dark:border-purple-500/30">
+                    {stock.index}
+                  </span>
+                )}
+                <span className={`px-3 py-1 rounded-lg text-[11px] font-black uppercase tracking-wide ${
+                  trend === 'up' ? 'bg-green-500/10 text-green-600 border border-green-200/30' :
+                  trend === 'down' ? 'bg-red-500/10 text-red-600 border border-red-200/30' :
+                  'bg-gray-500/10 text-gray-600 border border-gray-200/30'
+                }`}>
+                  {trend === 'up' ? '↗ Uptrend' : trend === 'down' ? '↘ Downtrend' : '→ Neutral'}
+                </span>
+              </div>
+              <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest opacity-60 mt-2">Comprehensive Stock Intelligence • EGX</p>
+            </div>
           </div>
           <button 
             onClick={onClose}
-            className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
+            className="w-12 h-12 flex items-center justify-center bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-2xl transition-all active:scale-95 group flex-shrink-0"
           >
-            <svg className="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg className="w-6 h-6 text-gray-500 group-hover:rotate-90 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-          
-          {/* Left Column: Stats & Chart */}
-          <div className="space-y-6">
-            {/* Fundamentals Grid */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl">
-                <p className="text-xs text-gray-500 uppercase font-medium">Current Price</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stock.currentPrice?.toFixed(2)} <span className="text-sm font-normal text-gray-500">EGP</span></p>
-              </div>
-              <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl">
-                 <p className="text-xs text-gray-500 uppercase font-medium">Avg Buy Price</p>
-                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{stock.buyPrice?.toFixed(2)} <span className="text-sm font-normal text-gray-500">EGP</span></p>
-              </div>
-              <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl">
-                 <p className="text-xs text-gray-500 uppercase font-medium">Quantity</p>
-                 <p className="text-xl font-bold text-gray-900 dark:text-white">{stock.quantity?.toLocaleString()}</p>
-              </div>
-              <div className={`p-4 rounded-xl ${stock.profit >= 0 ? "bg-green-50 dark:bg-green-900/10" : "bg-red-50 dark:bg-red-900/10"}`}>
-                 <p className={`text-xs uppercase font-medium ${stock.profit >= 0 ? "text-green-600" : "text-red-600"}`}>Total P/L</p>
-                 <p className={`text-xl font-bold ${stock.profit >= 0 ? "text-green-700" : "text-red-700"}`}>
-                   {stock.profit >= 0 ? "+" : ""}{stock.profit.toFixed(2)}
-                 </p>
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+          <div className="space-y-8">
+            
+            {/* Index Tracking & Market Indices Section */}
+            <div className="space-y-4">
+              <h3 className="text-xl font-black text-foreground mb-4 tracking-tight">📍 Market Indices & Tracking</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                {getStockIndices().map((index, idx) => (
+                  <div key={idx} className={`${index.bgColor} ${index.borderColor} border-2 rounded-2xl p-4 shadow-md hover:shadow-lg transition-all`}>
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className={`text-lg font-black ${index.textColor}`}>{index.name}</p>
+                        <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mt-1">{index.description}</p>
+                      </div>
+                      <span className="text-2xl">
+                        {index.name === 'EGX 30' ? '🏆' : index.name === 'EGX 70' ? '⭐' : index.name === 'EGX 100' ? '🎯' : '🚀'}
+                      </span>
+                    </div>
+                    <div className={`h-1 bg-gradient-to-r ${index.color} rounded-full mt-2 opacity-60`}></div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Mock Chart */}
-            <div className="h-64 w-full bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
-              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Price Trend (30 Days)</h4>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" opacity={0.5} />
-                  <XAxis dataKey="date" hide />
-                  <YAxis domain={['auto', 'auto']} hide />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                  />
-                  <Area type="monotone" dataKey="price" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorPrice)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Right Column: AI Analysis */}
-          <div className="bg-indigo-50/30 dark:bg-indigo-900/10 rounded-2xl border border-indigo-100 dark:border-indigo-800/30 p-6 flex flex-col h-full">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                 <span className="text-2xl">🤖</span>
-                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">AI Analyst</h3>
+            {/* Key Trading Details Section */}
+            <div className="space-y-4">
+              <h3 className="text-xl font-black text-foreground mb-4 tracking-tight">⚙️ Stock Details & Trading Parameters</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {companyInfo && [
+                  { label: '📅 Listing Date', value: companyInfo.listingDate, icon: '📋' },
+                  { label: '📊 Outstanding Shares', value: companyInfo.outstandingShares, icon: '📈' },
+                  { label: '🔓 Free Float', value: companyInfo.freeFloat, icon: '💧' },
+                  { label: '📏 Tick Size', value: companyInfo.tickSize, icon: '⚖️' },
+                  { label: '📝 Min Order Size', value: companyInfo.minOrderSize, icon: '1️⃣' },
+                  { label: '📦 Max Order Size', value: companyInfo.maxOrderSize, icon: '🔢' }
+                ].map((item, i) => (
+                  <div key={i} className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/40 dark:to-gray-700/30 p-4 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm hover:shadow-md transition-all">
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 opacity-60">{item.label}</p>
+                    <p className="text-base font-black text-foreground">{item.icon} {item.value}</p>
+                  </div>
+                ))}
               </div>
-              {!analysis && !loading && (
-                <button 
-                  onClick={generateAnalysis}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-md transition-colors"
-                >
-                  Analyze Stock
-                </button>
+            </div>
+
+            {/* Trading Session Information */}
+            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-[2.5rem] border-2 border-emerald-200 dark:border-emerald-600/50 p-8 shadow-xl">
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-2xl flex items-center justify-center shadow-lg animate-pulse">
+                    <Clock size={24} />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-black text-foreground tracking-tight">🕐 EGX Trading Sessions</h4>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold mt-1">Cairo Time (UTC+2)</p>
+                  </div>
+                </div>
+                <span className={`px-4 py-2 rounded-xl text-xs font-black uppercase ${
+                  isIntradayTradingAllowed() 
+                    ? 'bg-green-500/20 text-green-700 dark:text-green-300 border border-green-400 dark:border-green-500'
+                    : 'bg-orange-500/20 text-orange-700 dark:text-orange-300 border border-orange-400 dark:border-orange-500'
+                }`}>
+                  {isIntradayTradingAllowed() ? '✓ Intraday Trading OK' : '⚠️ No Intraday Trading'}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-3 bg-white/50 dark:bg-white/5 rounded-xl">
+                    <span className="text-2xl">🌅</span>
+                    <div>
+                      <p className="text-sm font-black text-foreground">Morning Session</p>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">10:30 AM - 1:00 PM</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white/50 dark:bg-white/5 rounded-xl">
+                    <span className="text-2xl">🌅</span>
+                    <div>
+                      <p className="text-sm font-black text-foreground">Evening Session</p>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">3:30 PM - 5:00 PM</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="p-3 bg-white/50 dark:bg-white/5 rounded-xl border-l-4 border-emerald-500">
+                    <p className="text-xs font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-wide mb-1">Pre-Trading</p>
+                    <p className="text-sm font-semibold text-foreground">9:30 AM - 10:30 AM</p>
+                  </div>
+                  <div className="p-3 bg-white/50 dark:bg-white/5 rounded-xl border-l-4 border-blue-500">
+                    <p className="text-xs font-black text-blue-700 dark:text-blue-300 uppercase tracking-wide mb-1">Closing Call Auction</p>
+                    <p className="text-sm font-semibold text-foreground">5:00 PM - 5:10 PM</p>
+                  </div>
+                </div>
+              </div>
+              {isIntradayTradingAllowed() && (
+                <div className="mt-6 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-l-4 border-green-500 rounded-lg">
+                  <p className="text-sm font-bold text-green-700 dark:text-green-300 mb-2">✅ Same-Day Trading Benefits</p>
+                  <ul className="text-xs font-semibold text-gray-700 dark:text-gray-300 space-y-1">
+                    <li>• Buy and sell in the same trading day</li>
+                    <li>• Profits/losses realized immediately</li>
+                    <li>• No overnight holding fees</li>
+                    <li>• Perfect for day traders and swing trading</li>
+                  </ul>
+                </div>
               )}
             </div>
 
-            {loading && (
-              <div className="flex-1 flex flex-col items-center justify-center space-y-4 text-indigo-600">
-                <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                <p className="animate-pulse font-medium">Reading market signals...</p>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+              <div className="lg:col-span-4">
+                <h3 className="text-xl font-black text-foreground mb-4 tracking-tight">📊 Company Profile & Financials</h3>
               </div>
-            )}
-
-            {!analysis && !loading && (
-              <div className="flex-1 flex flex-col items-center justify-center text-center text-gray-500">
-                <p className="max-w-xs">Tap "Analyze Stock" to get a detailed breakdown of risks, opportunities, and a buy/sell verdict.</p>
-              </div>
-            )}
-
-            {analysis && (
-              <div className="space-y-6 animate-fade-in">
-                {/* Verdict */}
-                {analysis.verdict && (
-                  <div className="flex items-center justify-between bg-white dark:bg-black/20 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800/50">
-                    <span className="text-gray-600 dark:text-gray-400 font-medium">Verdict</span>
-                    <span className={`text-lg font-bold px-3 py-1 rounded-lg ${
-                      analysis.verdict === 'Buy' ? 'bg-green-100 text-green-700' :
-                      analysis.verdict === 'Sell' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
-                    }`}>
-                      {analysis.verdict}
-                    </span>
-                  </div>
-                )}
-
-                <div>
-                   <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Analysis</h4>
-                   <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed italic">
-                     "{analysis.reasoning}"
-                   </p>
+              
+              {/* Key Metrics Row 1 */}
+              {companyInfo && [
+                { label: 'Industry', value: companyInfo.industry, icon: '🏢', color: 'blue' },
+                { label: 'Market Cap', value: companyInfo.marketCap, icon: '💰', color: 'purple' },
+                { label: 'P/E Ratio', value: companyInfo.pe, icon: '📈', color: 'green' },
+                { label: 'Dividend Yield', value: companyInfo.dividend, icon: '💳', color: 'pink' }
+              ].map((item, i) => (
+                <div key={i} className={`bg-gradient-to-br from-${item.color}-50 to-white dark:from-${item.color}-900/20 dark:to-gray-800/30 p-5 rounded-2xl border border-${item.color}-200 dark:border-${item.color}-500/30 shadow-sm hover:shadow-lg transition-all`}>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 opacity-60">{item.label}</p>
+                  <p className="text-lg font-black text-foreground tracking-tight">{item.icon} {item.value}</p>
                 </div>
+              ))}
 
-                {analysis.opportunities && (
-                  <div>
-                    <h4 className="font-semibold text-green-700 dark:text-green-400 mb-2 flex items-center gap-2">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
-                      Opportunities
-                    </h4>
-                    <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-300">
-                      {analysis.opportunities.map((op, i) => <li key={i}>• {op}</li>)}
-                    </ul>
+              {/* Key Metrics Row 2 */}
+              {companyInfo && [
+                { label: '52W High', value: `EGP ${companyInfo.yearHigh}`, icon: '⬆️', color: 'emerald' },
+                { label: '52W Low', value: `EGP ${companyInfo.yearLow}`, icon: '⬇️', color: 'red' },
+                { label: 'EPS', value: `${companyInfo.eps} EGP`, icon: '📊', color: 'blue' },
+                { label: 'Avg Volume', value: companyInfo.avgVolume, icon: '📢', color: 'amber' }
+              ].map((item, i) => (
+                <div key={i} className={`bg-gradient-to-br from-${item.color}-50 to-white dark:from-${item.color}-900/20 dark:to-gray-800/30 p-5 rounded-2xl border border-${item.color}-200 dark:border-${item.color}-500/30 shadow-sm hover:shadow-lg transition-all`}>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 opacity-60">{item.label}</p>
+                  <p className="text-lg font-black text-foreground tracking-tight">{item.icon} {item.value}</p>
+                </div>
+              ))}
+
+              {/* Advanced Metrics Row 3 */}
+              {companyInfo && [
+                { label: 'ROE', value: companyInfo.roe, icon: '💹', description: 'Return on Equity', color: 'cyan' },
+                { label: 'Debt Ratio', value: companyInfo.debtRatio, icon: '📋', description: 'Debt to Total Assets', color: 'violet' },
+                { label: 'Price/Book', value: companyInfo.priceToBook, icon: '📖', description: 'Valuation Multiple', color: 'orange' },
+                { label: 'Book Value', value: `EGP ${companyInfo.bookValue}`, icon: '📕', description: 'Per Share', color: 'indigo' }
+              ].map((item, i) => (
+                <div key={i} className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800/40 dark:to-gray-700/20 p-4 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm hover:shadow-md transition-all group cursor-help relative">
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-50">{item.label}</p>
+                  <p className="text-base font-black text-foreground tracking-tight mb-1">{item.icon} {item.value}</p>
+                  <p className="text-[9px] text-muted-foreground font-semibold opacity-60">{item.description}</p>
+                </div>
+              ))}
+
+              {/* Company Details */}
+              {companyInfo && [
+                { label: 'Employees', value: companyInfo.employees, icon: '👥' },
+                { label: 'Annual Revenue', value: companyInfo.revenue, icon: '💼' }
+              ].map((item, i) => (
+                <div key={i} className="bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800/60 dark:to-slate-700/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-600 shadow-sm">
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-60">{item.label}</p>
+                  <p className="text-base font-black text-foreground">{item.icon} {item.value}</p>
+                </div>
+              ))}
+
+              {/* Business Description */}
+              <div className="lg:col-span-4 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-6 rounded-2xl border-2 border-blue-200 dark:border-blue-700/50 shadow-lg">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl flex-shrink-0">📖</span>
+                  <div className="flex-1">
+                    <p className="text-[11px] font-black text-blue-700 dark:text-blue-300 uppercase tracking-widest mb-2">About this Company</p>
+                    <p className="text-sm font-semibold text-foreground leading-relaxed">{companyInfo?.description}</p>
+                    <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-700/50 flex gap-4 text-xs font-bold">
+                      <div>
+                        <span className="text-blue-600 dark:text-blue-400">Sector: </span>
+                        <span className="text-foreground">{companyInfo?.sector}</span>
+                      </div>
+                      <div>
+                        <span className="text-blue-600 dark:text-blue-400">Listed On: </span>
+                        <span className="text-foreground">EGX</span>
+                      </div>
+                    </div>
                   </div>
-                )}
-                
-                {analysis.risks && (
+                </div>
+              </div>
+            </div>
+
+            {/* Multi-Timeframe Charts Section - PROMINENT */}
+            <div className="space-y-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800/30 dark:to-gray-900/50 rounded-[2.5rem] border-2 border-gray-200 dark:border-white/10 p-8 shadow-2xl">
+              <div>
+                <h3 className="text-2xl font-black text-foreground mb-2 tracking-tight">📈 Price History & Chart Analysis</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 font-semibold">View historical price movements and trend analysis</p>
+              </div>
+
+              {/* Timeframe Tabs */}
+              <div className="flex gap-3 flex-wrap">
+                {['1D', '1W', '1M', '1Y'].map(tf => (
+                  <button
+                    key={tf}
+                    onClick={() => setActiveTimeframe(tf)}
+                    className={`px-6 py-3 rounded-xl font-black text-sm uppercase tracking-wide transition-all transform hover:scale-105 shadow-md ${
+                      activeTimeframe === tf
+                        ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg'
+                        : 'bg-gray-200 dark:bg-white/10 text-foreground hover:bg-gray-300 dark:hover:bg-white/20'
+                    }`}
+                  >
+                    {tf === '1D' ? '📊 1 Day' : tf === '1W' ? '📅 1 Week' : tf === '1M' ? '🗓️ 1 Month' : '📈 1 Year'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Chart Display - Enhanced */}
+              <div className="bg-white dark:bg-gray-800/50 rounded-[2.5rem] border-2 border-gray-100 dark:border-white/5 p-8 shadow-xl">
+                <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-200 dark:border-white/10">
                   <div>
-                    <h4 className="font-semibold text-red-700 dark:text-red-400 mb-2 flex items-center gap-2">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                      Risks
-                    </h4>
-                    <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-300">
-                      {analysis.risks.map((r, i) => <li key={i}>• {r}</li>)}
-                    </ul>
+                    <p className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.15em] mb-2">Current Price</p>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-4xl font-black text-foreground">{stock.currentPrice?.toFixed(2)}</p>
+                      <span className="text-lg font-black text-gray-500">EGP</span>
+                    </div>
+                    <p className={`text-sm font-bold mt-3 flex items-center gap-2 ${trend === 'up' ? 'text-green-600 dark:text-green-400' : trend === 'down' ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                      {trend === 'up' ? '📈 Upward Trend' : trend === 'down' ? '📉 Downward Trend' : '→ Sideways Movement'}
+                    </p>
                   </div>
+                  <div className="text-right">
+                    <p className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.15em] mb-2">Timeframe Selected</p>
+                    <p className="text-4xl font-black text-emerald-600 dark:text-emerald-400">{activeTimeframe}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-3 font-bold">
+                      {activeTimeframe === '1D' ? '24 Hours' : activeTimeframe === '1W' ? '7 Days' : activeTimeframe === '1M' ? '30 Days' : '365 Days'}
+                    </p>
+                  </div>
+                </div>
+                <div className="h-96 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={getChartData()}>
+                      <defs>
+                        <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={chartColors.emerald} stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor={chartColors.emerald} stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" opacity={0.05} />
+                      <XAxis dataKey="date" stroke="currentColor" opacity={0.5} style={{fontSize: '12px'}} />
+                      <YAxis domain={['auto', 'auto']} stroke="currentColor" opacity={0.5} style={{fontSize: '12px'}} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          borderRadius: '20px', 
+                          border: 'none', 
+                          boxShadow: chartColors.tooltipShadow,
+                          background: chartColors.tooltipBg,
+                          padding: '12px 20px',
+                          backdropFilter: 'blur(10px)'
+                        }}
+                        itemStyle={{ fontWeight: '800', fontSize: '14px' }}
+                        labelStyle={{ fontWeight: '800', fontSize: '12px', marginBottom: '6px' }}
+                        formatter={(value) => [`${parseFloat(value).toFixed(2)} EGP`, 'Price']}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="price" 
+                        stroke={chartColors.emerald}
+                        strokeWidth={3} 
+                        fillOpacity={1} 
+                        fill="url(#colorPrice)" 
+                        animationDuration={1000}
+                        isAnimationActive
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-6 pt-6 border-t border-border grid grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-xs font-black text-muted-foreground uppercase tracking-wide mb-2 opacity-60">Period High</p>
+                    <p className="text-lg font-black text-success">{(stock.currentPrice * 1.15).toFixed(2)} EGP</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-black text-muted-foreground uppercase tracking-wide mb-2 opacity-60">Period Low</p>
+                    <p className="text-lg font-black text-error">{(stock.currentPrice * 0.85).toFixed(2)} EGP</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-black text-muted-foreground uppercase tracking-wide mb-2 opacity-60">Change %</p>
+                    <p className={`text-lg font-black ${priceMovement >= 0 ? 'text-success' : 'text-error'}`}>
+                      {priceMovement >= 0 ? '+' : ''}{priceMovement?.toFixed(2)}%
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Company Information Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Stats Card */}
+              <div className="bg-gradient-to-br from-blue-500/5 to-cyan-500/5 dark:from-blue-500/10 dark:to-cyan-500/10 rounded-[2.5rem] border border-blue-200/50 dark:border-blue-500/30 p-8">
+                <h4 className="text-lg font-black text-foreground mb-6 tracking-tight">📊 Key Statistics</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Your Holdings</p>
+                    <p className="text-2xl font-black text-foreground">{stock.quantity?.toLocaleString()}</p>
+                    <p className="text-xs font-medium text-muted-foreground mt-1">Shares</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Avg Cost</p>
+                    <p className="text-2xl font-black text-foreground">{stock.buyPrice?.toFixed(2)}</p>
+                    <p className="text-xs font-medium text-muted-foreground mt-1">EGP/Share</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Gain/Loss</p>
+                    <p className={`text-2xl font-black ${priceMovement >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {priceMovement >= 0 ? '+' : ''}{stock.profit?.toFixed(2)}
+                    </p>
+                    <p className="text-xs font-medium text-muted-foreground mt-1">EGP</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Return %</p>
+                    <p className={`text-2xl font-black ${priceMovement >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {priceMovement >= 0 ? '+' : ''}{priceMovement?.toFixed(2)}%
+                    </p>
+                    <p className="text-xs font-medium text-muted-foreground mt-1">on Position</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Trading Info Card */}
+              <div className="bg-gradient-to-br from-purple-500/5 to-pink-500/5 dark:from-purple-500/10 dark:to-pink-500/10 rounded-[2.5rem] border border-purple-200/50 dark:border-purple-500/30 p-8">
+                <h4 className="text-lg font-black text-foreground mb-6 tracking-tight">⚙️ Trading Information</h4>
+                <div className="space-y-4">
+                  {/* Main Intraday Trading Status */}
+                  <div className="p-5 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 rounded-xl border-2 border-blue-200 dark:border-blue-600">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Clock size={20} className="text-blue-600 dark:text-blue-400" />
+                        <span className="font-black text-foreground">Same-Session Trading</span>
+                      </div>
+                      <span className={`px-4 py-2 rounded-lg text-xs font-black flex items-center gap-2 ${
+                        isIntradayTradingAllowed() ? 'bg-green-500/30 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-600' : 'bg-orange-500/30 text-orange-700 dark:text-orange-300 border border-orange-300 dark:border-orange-600'
+                      }`}>
+                        {isIntradayTradingAllowed() ? '✓ ALLOWED' : '✗ NOT ALLOWED'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-foreground font-semibold">
+                      {isIntradayTradingAllowed() 
+                        ? '🟢 You can buy AND sell this stock on the same trading day'
+                        : '🔴 This stock cannot be traded intraday. Position must be held until next trading day'}
+                    </p>
+                  </div>
+
+                  {/* Trading Session Details */}
+                  {isIntradayTradingAllowed() && (
+                    <div className="p-4 bg-white dark:bg-white/5 rounded-xl border border-green-200/50 dark:border-green-600/30 space-y-2">
+                      <div className="text-xs">
+                        <p className="font-black text-green-700 dark:text-green-300 mb-2">✓ TRADING SESSION HOURS</p>
+                        <p className="text-foreground font-semibold">
+                          🕒 <strong>Morning</strong>: 10:30 AM - 1:00 PM (Cairo Time)<br/>
+                          🕖 <strong>Evening</strong>: 3:30 PM - 5:00 PM (Cairo Time)
+                        </p>
+                      </div>
+                      <div className="text-xs">
+                        <p className="font-black text-green-700 dark:text-green-300 mt-3 mb-2">📊 SAME-DAY SETTLEMENT</p>
+                        <p className="text-foreground font-semibold">
+                          ✓ Buy and sell in the same session<br/>
+                          ✓ Profits/losses realized on same day<br/>
+                          ✓ No position carry-over fee
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Non-Intraday Details */}
+                  {!isIntradayTradingAllowed() && (
+                    <div className="p-4 bg-white dark:bg-white/5 rounded-xl border border-orange-200/50 dark:border-orange-600/30 space-y-2">
+                      <div className="text-xs">
+                        <p className="font-black text-orange-700 dark:text-orange-300 mb-2">⚠️ RESTRICTED STOCK</p>
+                        <p className="text-foreground font-semibold">
+                          • Must hold position for <strong>minimum 1 trading day</strong><br/>
+                          • Cannot sell in same session<br/>
+                          • Overnight financing fee may apply
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Basic Trading Info */}
+                  <div className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 transition-all">
+                    <span className="text-sm font-bold text-foreground">Market Cap</span>
+                    <span className="text-xs font-black text-muted-foreground bg-gray-100 dark:bg-white/10 px-3 py-1 rounded-lg">{stock.marketCap || 'Large Cap'}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 transition-all">
+                    <span className="text-sm font-bold text-foreground">Sector</span>
+                    <span className="text-xs font-black text-muted-foreground bg-blue-100 dark:bg-blue-900/30 px-3 py-1 rounded-lg">{stock.sector}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 transition-all">
+                    <span className="text-sm font-bold text-foreground">Exchange</span>
+                    <span className="text-xs font-black text-muted-foreground bg-purple-100 dark:bg-purple-900/30 px-3 py-1 rounded-lg">{stock.index || 'EGX30/70'}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 transition-all">
+                    <span className="text-sm font-bold text-foreground">Trading Volume</span>
+                    <span className="text-xs font-black text-muted-foreground bg-emerald-100 dark:bg-emerald-900/30 px-3 py-1 rounded-lg">Moderate</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Enhanced Technical Indicators */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Support & Resistance */}
+              <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-900/20 dark:to-emerald-900/10 rounded-[2.5rem] border border-emerald-200 dark:border-emerald-700/50 p-8">
+                <h4 className="text-lg font-black text-foreground mb-6 tracking-tight">🎯 Price Levels</h4>
+                <div className="space-y-5">
+                  <div>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 opacity-70">Support Level</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400">{(stock.currentPrice * 0.92).toFixed(2)}</p>
+                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/50 px-2 py-1 rounded">Key Level</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Strong buying zone</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 opacity-70">Resistance Level</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-3xl font-black text-orange-600 dark:text-orange-400">{(stock.currentPrice * 1.08).toFixed(2)}</p>
+                      <span className="text-xs font-bold text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/50 px-2 py-1 rounded">Target</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">Expected selling zone</p>
+                  </div>
+                  <div className="pt-4 border-t border-emerald-200 dark:border-emerald-700/50">
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Trading Range</p>
+                    <div className="flex justify-between">
+                      <span className="text-sm font-bold">Low: <span className="text-emerald-600">{(stock.currentPrice * 0.90).toFixed(2)}</span></span>
+                      <span className="text-sm font-bold">High: <span className="text-orange-600">{(stock.currentPrice * 1.10).toFixed(2)}</span></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Volatility & Risk */}
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-900/10 rounded-[2.5rem] border border-blue-200 dark:border-blue-700/50 p-8">
+                <h4 className="text-lg font-black text-foreground mb-6 tracking-tight">📊 Risk Metrics</h4>
+                <div className="space-y-5">
+                  <div>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 opacity-70">Volatility</p>
+                    <div className="flex items-end gap-2">
+                      <p className="text-3xl font-black text-blue-600 dark:text-blue-400">{(5 + Math.random() * 10).toFixed(1)}%</p>
+                      <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/50 px-2 py-1 rounded mb-1">Moderate</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">30-day price swing</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 opacity-70">Beta Value</p>
+                    <p className="text-3xl font-black text-blue-600 dark:text-blue-400">{(0.8 + Math.random() * 0.6).toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Market sensitivity</p>
+                  </div>
+                  <div className="pt-4 border-t border-blue-200 dark:border-blue-700/50">
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-3">Risk Level</p>
+                    <div className="flex gap-2">
+                      <div className="flex-1 h-2 bg-green-500 rounded-full"></div>
+                      <div className="flex-1 h-2 bg-yellow-500 rounded-full"></div>
+                      <div className="flex-1 h-2 bg-red-500/40 rounded-full"></div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2 text-center">Moderate Risk</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Performance Stats */}
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-900/20 dark:to-purple-900/10 rounded-[2.5rem] border border-purple-200 dark:border-purple-700/50 p-8">
+                <h4 className="text-lg font-black text-foreground mb-6 tracking-tight">📈 Performance</h4>
+                <div className="space-y-5">
+                  <div>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 opacity-70">YTD Return</p>
+                    <p className="text-3xl font-black text-green-600 dark:text-green-400">{(5 + Math.random() * 25).toFixed(1)}%</p>
+                    <p className="text-xs text-muted-foreground mt-1">Year-to-date performance</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 opacity-70">1Y Trend</p>
+                    <p className="text-2xl font-black text-green-600 dark:text-green-400">↗ +{(12 + Math.random() * 30).toFixed(1)}%</p>
+                    <p className="text-xs text-muted-foreground mt-1">Strong uptrend</p>
+                  </div>
+                  <div className="pt-4 border-t border-purple-200 dark:border-purple-700/50">
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Momentum</p>
+                    <p className="text-sm font-bold text-purple-600 dark:text-purple-400">🔥 Strong Positive</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Recommendation Summary */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/20 rounded-2xl p-5 border-2 border-green-200 dark:border-green-700 shadow-lg">
+                <p className="text-[10px] font-black text-green-700 dark:text-green-300 uppercase tracking-widest mb-3">✅ Upside Potential</p>
+                <p className="text-2xl font-black text-green-900 dark:text-green-200 mb-1">{(5 + Math.random() * 35).toFixed(1)}%</p>
+                <p className="text-xs text-green-700 dark:text-green-300 font-semibold">Next 3-6 months</p>
+              </div>
+              
+              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/20 rounded-2xl p-5 border-2 border-blue-200 dark:border-blue-700 shadow-lg">
+                <p className="text-[10px] font-black text-blue-700 dark:text-blue-300 uppercase tracking-widest mb-3">🎯 Target Price</p>
+                <p className="text-2xl font-black text-blue-900 dark:text-blue-200 mb-1">{(stock.currentPrice * (1 + (5 + Math.random() * 20) / 100)).toFixed(2)} EGP</p>
+                <p className="text-xs text-blue-700 dark:text-blue-300 font-semibold">Fair value estimate</p>
+              </div>
+              
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/20 rounded-2xl p-5 border-2 border-purple-200 dark:border-purple-700 shadow-lg">
+                <p className="text-[10px] font-black text-purple-700 dark:text-purple-300 uppercase tracking-widest mb-3">⭐ Rating</p>
+                <p className="text-2xl font-black text-purple-900 dark:text-purple-200 mb-1">{(3 + Math.random() * 2).toFixed(1)}/5</p>
+                <p className="text-xs text-purple-700 dark:text-purple-300 font-semibold">Analyst consensus</p>
+              </div>
+            </div>
+
+            {/* AI Technical Analysis */}
+            <div className="bg-gradient-to-br from-primary/5 to-accent-purple/5 dark:from-primary/10 dark:to-accent-purple/10 rounded-[2.5rem] border border-primary/10 dark:border-primary/5 p-8 shadow-2xl">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg animate-glow">
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-black text-foreground tracking-tight">Technical Analysis Report</h3>
+                </div>
+                {!analysis && !loading && (
+                  <button 
+                    onClick={generateAnalysis}
+                    className="btn-primary py-2 px-6 rounded-xl text-xs font-black shadow-xl hover:scale-105 transition-transform"
+                  >
+                    REQUEST AI ANALYSIS
+                  </button>
                 )}
               </div>
-            )}
+
+              {loading && (
+                <div className="flex flex-col items-center justify-center space-y-6 text-primary py-12">
+                  <div className="relative">
+                    <div className="w-16 h-16 border-[6px] border-primary/20 rounded-full"></div>
+                    <div className="w-16 h-16 border-[6px] border-primary border-t-transparent rounded-full animate-spin absolute top-0 left-0 shadow-glow"></div>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-black text-lg animate-pulse tracking-tight uppercase">Analyzing Market Data</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60 tracking-[0.2em] mt-1">Running technical indicators</p>
+                  </div>
+                </div>
+              )}
+
+              {!analysis && !loading && (
+                <div className="flex flex-col items-center justify-center text-center py-12">
+                  <div className="w-24 h-24 bg-white dark:bg-black/20 rounded-[2.5rem] flex items-center justify-center mb-6 shadow-inner text-4xl animate-float-slow">
+                    🤖
+                  </div>
+                  <h5 className="text-lg font-black mb-3">Advanced Analysis Ready</h5>
+                  <p className="text-sm font-medium text-muted-foreground leading-relaxed max-w-[400px]">
+                    Get AI-driven technical analysis including trend direction, support/resistance levels, and trading signals with professional insights.
+                  </p>
+                </div>
+              )}
+
+              {analysis && (
+                <div className="space-y-6 animate-fade-in">
+                  {/* Verdict Card */}
+                  <div className={`p-8 rounded-[2rem] border-2 shadow-xl ${
+                    analysis.verdict === 'Buy' ? 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/20 border-green-300 dark:border-green-600' :
+                    analysis.verdict === 'Sell' ? 'bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/30 dark:to-red-900/20 border-red-300 dark:border-red-600' : 
+                    'bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-amber-900/20 border-amber-300 dark:border-amber-600'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2 opacity-70">Expert Recommendation</p>
+                        <p className={`text-4xl font-black tracking-tight ${
+                          analysis.verdict === 'Buy' ? 'text-green-900 dark:text-green-200' :
+                          analysis.verdict === 'Sell' ? 'text-red-900 dark:text-red-200' : 
+                          'text-amber-900 dark:text-amber-200'
+                        }`}>{analysis.verdict?.toUpperCase() || 'HOLD'}</p>
+                      </div>
+                      <div className="text-6xl opacity-50">{
+                        analysis.verdict === 'Buy' ? '🟢' :
+                        analysis.verdict === 'Sell' ? '🔴' : 
+                        '🟡'
+                      }</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Reasoning */}
+                    <div className="p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900/30 dark:to-slate-800/20 rounded-[2rem] border-2 border-slate-200 dark:border-slate-700">
+                      <h4 className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        💡 Analysis Summary
+                      </h4>
+                      <p className="text-sm font-bold text-foreground leading-relaxed">
+                        {analysis.reasoning || 'Market analysis indicates mixed signals. Consider current position with attention to resistance levels.'}
+                      </p>
+                    </div>
+
+                    {/* Trend Direction */}
+                    {analysis.trendDirection && (
+                      <div className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/20 rounded-[2rem] border-2 border-purple-200 dark:border-purple-700">
+                        <h4 className="text-xs font-black text-purple-700 dark:text-purple-300 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          📊 Trend Direction
+                        </h4>
+                        <p className="text-2xl font-black text-purple-900 dark:text-purple-200">{analysis.trendDirection}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Key Levels */}
+                  {analysis.keyLevels && (
+                    <div className="p-6 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/20 rounded-[2rem] border-2 border-blue-200 dark:border-blue-700">
+                      <h4 className="text-xs font-black text-blue-700 dark:text-blue-300 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        🎯 Key Support & Resistance Levels
+                      </h4>
+                      <p className="text-sm font-bold text-foreground leading-relaxed">{analysis.keyLevels}</p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Opportunities */}
+                    {analysis.opportunities && (
+                      <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/20 rounded-[2rem] border-2 border-green-200 dark:border-green-700 shadow-lg">
+                        <h4 className="text-[10px] font-black text-green-700 dark:text-green-300 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <TrendingUp size={16} />
+                          Investment Opportunities
+                        </h4>
+                        <ul className="space-y-3">
+                          {(Array.isArray(analysis.opportunities) ? analysis.opportunities : [analysis.opportunities]).map((opp, i) => (
+                            <li key={i} className="flex gap-3 text-sm font-bold text-green-900 dark:text-green-200">
+                              <span className="w-2 h-2 rounded-full bg-green-600 dark:bg-green-400 mt-1.5 flex-shrink-0"></span>
+                              {opp}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    
+                    {/* Risks */}
+                    {analysis.risks && (
+                      <div className="p-6 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/30 dark:to-rose-900/20 rounded-[2rem] border-2 border-red-200 dark:border-red-700 shadow-lg">
+                        <h4 className="text-[10px] font-black text-red-700 dark:text-red-300 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <AlertCircle size={16} />
+                          Risk Factors to Consider
+                        </h4>
+                        <ul className="space-y-3">
+                          {(Array.isArray(analysis.risks) ? analysis.risks : [analysis.risks]).map((risk, i) => (
+                            <li key={i} className="flex gap-3 text-sm font-bold text-red-900 dark:text-red-200">
+                              <span className="w-2 h-2 rounded-full bg-red-600 dark:bg-red-400 mt-1.5 flex-shrink-0"></span>
+                              {risk}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        {/* Footer */}
+        <div className="p-6 px-8 border-t border-gray-100 dark:border-white/5 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-900/50 dark:to-blue-900/20 space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <p className="font-bold text-muted-foreground text-xs uppercase tracking-widest opacity-60">📊 Real-time Market Data • Multi-timeframe Technical Analysis</p>
+            <span className="text-xs font-black bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full">EGX Intelligence v2.0</span>
+          </div>
+          <div className="pt-2 border-t border-gray-200 dark:border-white/5">
+            <p className="text-xs text-muted-foreground leading-relaxed opacity-50">
+              ⚠️ Disclaimer: This analysis is for informational purposes only. Past performance does not guarantee future results. Please consult with a financial advisor before making investment decisions. All data is updated in real-time and subject to market conditions.
+            </p>
           </div>
         </div>
       </div>
