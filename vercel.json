@@ -18,11 +18,7 @@
   "crons": [
     {
       "path": "/api/egx-stocks",
-      "schedule": "0 */4 * * *"
-    },
-    {
-      "path": "/api/health",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 9 * * *"
     }
   ]
 }
