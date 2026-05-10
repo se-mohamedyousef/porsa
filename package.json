@@ -9,20 +9,15 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^1.0.0",
-    "@ai-sdk/deepseek": "^1.0.5",
-    "@upstash/redis": "^1.35.3",
-    "@vercel/kv": "^3.0.0",
-    "@vercel/postgres": "^0.10.0",
-    "ai": "^5.0.9",
+    "@upstash/redis": "^1.38.0",
     "bcryptjs": "^3.0.3",
+    "cheerio": "^1.2.0",
     "lucide-react": "^0.564.0",
     "next": "^16.1.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "recharts": "^3.7.0",
-    "resend": "^6.9.1",
-    "vercel": "^53.2.0"
+    "resend": "^6.9.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

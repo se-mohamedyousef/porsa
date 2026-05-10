@@ -64,7 +64,7 @@ function MainApp() {
 
   // Show simplified dashboard
   return (
-    <SimpleDashboard userId={currentUser?.id} />
+    <SimpleDashboard userId={currentUser?.id} onLogout={handleLogout} />
   );
 }
 

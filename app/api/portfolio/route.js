@@ -41,6 +41,14 @@ export async function POST(request) {
     // Handle adding to watchlist
     if (action === 'add_to_watchlist' && stock) {
       try {
+        // Validate stock object has required fields
+        if (!stock.symbol) {
+          return NextResponse.json(
+            { error: "Stock must have a symbol property" },
+            { status: 400 }
+          );
+        }
+
         const currentPortfolio = await getUserPortfolio(userId);
         const watchlist = currentPortfolio.watchlist || [];
         
@@ -49,9 +57,9 @@ export async function POST(request) {
           watchlist.push({
             symbol: stock.symbol,
             addedAt: new Date().toISOString(),
-            currentPrice: stock.currentPrice,
-            sector: stock.sector,
-            recommendation: stock.recommendation
+            currentPrice: stock.currentPrice || 0,
+            sector: stock.sector || "Unknown",
+            recommendation: stock.recommendation || ""
           });
           
           // Save updated portfolio with watchlist

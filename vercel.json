@@ -1,7 +1,28 @@
 {
   "functions": {
-    "app/api/**/*.js": {
-      "maxDuration": 30
+    "app/api/egx-stocks/route.js": { "maxDuration": 120, "memory": 1024 },
+    "app/api/egx-chart/route.js": { "maxDuration": 60, "memory": 512 },
+    "app/api/egx-recommendations/route.js": { "maxDuration": 120, "memory": 1024 },
+    "app/api/init-preset/route.js": { "maxDuration": 120, "memory": 1024 },
+    "app/api/agents/**/*.js": { "maxDuration": 60, "memory": 512 },
+    "app/api/health/route.js": { "maxDuration": 30, "memory": 256 },
+    "app/api/status/route.js": { "maxDuration": 30, "memory": 256 },
+    "app/api/**/*.js": { "maxDuration": 30, "memory": 256 }
+  },
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "env": {
+    "NODE_ENV": "production",
+    "LOG_LEVEL": "INFO"
+  },
+  "crons": [
+    {
+      "path": "/api/egx-stocks",
+      "schedule": "0 */4 * * *"
+    },
+    {
+      "path": "/api/health",
+      "schedule": "*/5 * * * *"
     }
-  }
-} 
+  ]
+}

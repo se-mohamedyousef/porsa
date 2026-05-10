@@ -10,6 +10,7 @@ export function ThemeProvider({ children }) {
 
   // Load theme from localStorage on mount
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const savedTheme = localStorage.getItem("porsaTheme") || "light";
     setTheme(savedTheme);
     
@@ -26,13 +27,17 @@ export function ThemeProvider({ children }) {
   const toggleTheme = () => {
     setTheme((prevTheme) => {
       const newTheme = prevTheme === "light" ? "dark" : "light";
-      localStorage.setItem("porsaTheme", newTheme);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem("porsaTheme", newTheme);
+      }
       
       // Apply theme to HTML element
       if (newTheme === "dark") {
         document.documentElement.classList.add("dark");
+        document.documentElement.style.colorScheme = "dark";
       } else {
         document.documentElement.classList.remove("dark");
+        document.documentElement.style.colorScheme = "light";
       }
       
       return newTheme;
@@ -42,7 +47,9 @@ export function ThemeProvider({ children }) {
   const setThemeMode = (mode) => {
     if (mode === "dark" || mode === "light") {
       setTheme(mode);
-      localStorage.setItem("porsaTheme", mode);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem("porsaTheme", mode);
+      }
       
       if (mode === "dark") {
         document.documentElement.classList.add("dark");

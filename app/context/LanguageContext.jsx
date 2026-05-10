@@ -10,6 +10,7 @@ export function LanguageProvider({ children }) {
 
   useEffect(() => {
     // Load saved language
+    if (typeof window === 'undefined') return;
     const savedLang = localStorage.getItem("porsaLanguage");
     if (savedLang) {
       setLanguage(savedLang);
@@ -19,11 +20,14 @@ export function LanguageProvider({ children }) {
   const toggleLanguage = () => {
     const newLang = language === "en" ? "ar" : "en";
     setLanguage(newLang);
-    localStorage.setItem("porsaLanguage", newLang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("porsaLanguage", newLang);
+    }
   };
 
   // Update HTML dir attribute for RTL support
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     document.documentElement.lang = language;
     document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
   }, [language]);

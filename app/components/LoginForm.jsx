@@ -62,9 +62,16 @@ export default function LoginForm({ onLogin }) {
         const data = await response.json();
 
         if (data.success) {
-          // Store current user session
-          localStorage.setItem("porsaCurrentUser", JSON.stringify(data.user));
-          onLogin(data.user);
+          // Store current user session with all user data
+          const userData = {
+            id: data.user.id,
+            name: data.user.name,
+            phone: data.user.phone,
+            email: data.user.email,
+            createdAt: data.user.createdAt
+          };
+          localStorage.setItem("porsaCurrentUser", JSON.stringify(userData));
+          onLogin(userData);
         } else {
           setError(data.error || "Invalid phone or password");
         }
@@ -86,9 +93,16 @@ export default function LoginForm({ onLogin }) {
         const data = await response.json();
 
         if (data.success) {
-          // Store current user session
-          localStorage.setItem("porsaCurrentUser", JSON.stringify(data.user));
-          onLogin(data.user);
+          // Store current user session with all user data
+          const userData = {
+            id: data.user.id,
+            name: data.user.name,
+            phone: data.user.phone,
+            email: data.user.email,
+            createdAt: data.user.createdAt
+          };
+          localStorage.setItem("porsaCurrentUser", JSON.stringify(userData));
+          onLogin(userData);
         } else {
           setError(data.error || "Failed to create account");
         }
@@ -113,23 +127,23 @@ export default function LoginForm({ onLogin }) {
       <div className="absolute top-[20%] right-[10%] w-[20%] h-[20%] bg-accent-pink/5 rounded-full blur-[80px] animate-pulse-subtle"></div>
       
       <div className="w-full max-w-md relative z-10">
-        <div className="glass-card p-10 animate-scale-in relative overflow-hidden border-white/20 dark:border-white/5">
+        <div className="glass-card p-4 sm:p-10 animate-scale-in relative overflow-hidden border-white/20 dark:border-white/5">
           {/* Subtle inner glow */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
 
-          <div className="text-center mb-10 relative z-10">
-            <div className="w-20 h-20 gradient-primary rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl animate-float relative">
-              <div className="absolute inset-0 bg-white/20 rounded-3xl animate-pulse-subtle"></div>
-              <span className="text-white font-extrabold text-3xl relative z-10">P</span>
+          <div className="text-center mb-6 sm:mb-10 relative z-10">
+            <div className="w-14 sm:w-20 h-14 sm:h-20 gradient-primary rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-8 shadow-2xl animate-float relative">
+              <div className="absolute inset-0 bg-white/20 rounded-2xl sm:rounded-3xl animate-pulse-subtle"></div>
+              <span className="text-white font-extrabold text-2xl sm:text-3xl relative z-10">P</span>
             </div>
-            <h2 className="text-4xl font-extrabold gradient-text mb-3 tracking-tight">
+            <h2 className="text-2xl sm:text-4xl font-extrabold gradient-text mb-2 sm:mb-3 tracking-tight">
               {isForgotPassword
                 ? "Reset Access"
                 : isLogin
                 ? "Welcome Back"
                 : "Create Account"}
             </h2>
-            <p className="text-muted-foreground text-sm font-medium">
+            <p className="text-muted-foreground text-xs sm:text-sm font-medium">
               {isForgotPassword
                 ? "Enter your email to receive a secure link"
                 : isLogin
@@ -138,7 +152,7 @@ export default function LoginForm({ onLogin }) {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6 relative z-10 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 relative z-10 animate-slide-up" style={{ animationDelay: '0.1s' }}>
             {isForgotPassword ? (
               <div className="space-y-2">
                 <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">

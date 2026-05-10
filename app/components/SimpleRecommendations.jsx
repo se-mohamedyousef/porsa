@@ -16,107 +16,93 @@ export default function SimpleRecommendations({ onAddStock, onViewDetails, onOpe
   const fetchRecommendations = async () => {
     try {
       setLoading(true);
-      const userId = localStorage.getItem('userId') || 'anonymous';
+      const userId = typeof window !== 'undefined' ? (localStorage.getItem('userId') || 'anonymous') : 'anonymous';
 
-      const response = await fetch('/api/agents/get-recommendations', {
+      // Try to fetch preset recommendations first
+      let response = await fetch(`/api/egx-recommendations`);
+      let data = null;
+
+      if (response.ok) {
+        data = await response.json();
+        
+        // Extract recommendations from preset data
+        if (data.success && data.data?.recommendations) {
+          const presetRecs = data.data.recommendations;
+          const confidenceFromRsi = (rsi) => {
+            if (rsi == null || Number.isNaN(rsi)) return null;
+            return Math.min(92, Math.max(55, Math.round(100 - Math.abs(rsi - 50))));
+          };
+          const allRecs = [
+            ...(presetRecs.short_term_buy || []).map((r, i) => ({
+              id: `st_buy_${i}`,
+              symbol: r.symbol,
+              name: r.symbol,
+              entryPrice: r.current_price,
+              targetPrice: r.target_price,
+              stopLoss: Number((r.current_price * 0.97).toFixed(2)),
+              expectedReturn: r.expected_return_percent,
+              riskLevel: r.risk,
+              reason: r.reason,
+              timeframe: 'short-term',
+              confidence: confidenceFromRsi(r.rsi_14) ?? 70,
+            })),
+            ...(presetRecs.long_term_buy || []).map((r, i) => ({
+              id: `lt_buy_${i}`,
+              symbol: r.symbol,
+              name: r.symbol,
+              entryPrice: r.current_price,
+              targetPrice: r.target_price,
+              stopLoss: Number((r.current_price * 0.95).toFixed(2)),
+              expectedReturn: r.expected_return_percent,
+              riskLevel: r.risk,
+              reason: r.reason,
+              timeframe: 'long-term',
+              confidence: confidenceFromRsi(r.rsi_14) ?? 68,
+            })),
+          ];
+
+          setRecommendations(allRecs.slice(0, 5));
+          return;
+        }
+      }
+
+      response = await fetch('/api/agents/get-recommendations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, action: 'standard' })
+        body: JSON.stringify({ userId, action: 'standard' }),
       });
 
       if (!response.ok) throw new Error('Failed to fetch recommendations');
 
-      const data = await response.json();
-      
-      // If agent succeeded, parse its response
+      data = await response.json();
+
       if (data.success && data.message) {
         let recommendations = [];
         try {
-          // Try to extract JSON from response
           const jsonMatch = data.message.match(/\[[\s\S]*\]/);
           if (jsonMatch) {
             recommendations = JSON.parse(jsonMatch[0]);
           }
         } catch (e) {
-          console.error("JSON parse error:", e);
+          console.error('JSON parse error:', e);
         }
-        
-        // Fallback to mock if no JSON found
-        if (!recommendations || recommendations.length === 0) {
-          recommendations = [
-            {
-              id: 1,
-              symbol: 'HRHO',
-              name: 'Heliopolis Housing',
-              entryPrice: 40.0,
-              targetPrice: 44.0,
-              stopLoss: 39.2,
-              expectedReturn: 10.0,
-              riskLevel: 'LOW',
-              confidence: 92,
-              reason: 'Steady uptrend, strong support'
-            },
-            {
-              id: 2,
-              symbol: 'EBANK',
-              name: 'Egyptian Bank',
-              entryPrice: 45.2,
-              targetPrice: 50.5,
-              stopLoss: 43.8,
-              expectedReturn: 11.7,
-              riskLevel: 'MEDIUM',
-              confidence: 85,
-              reason: 'Technical breakout, high volume'
-            },
-            {
-              id: 3,
-              symbol: 'SWDY',
-              name: 'Swvl Holdings',
-              entryPrice: 10.0,
-              targetPrice: 11.5,
-              stopLoss: 9.5,
-              expectedReturn: 15.0,
-              riskLevel: 'MEDIUM',
-              confidence: 78,
-              reason: 'Growth potential, expanding market'
-            }
-          ];
-        }
-        
-        setRecommendations(recommendations);
+
+        const normalized = (recommendations || []).map((r, i) => ({
+          ...r,
+          id: r.id ?? `agent_${i}`,
+          stopLoss:
+            r.stopLoss ??
+            (r.entryPrice != null ? Number((r.entryPrice * 0.97).toFixed(2)) : undefined),
+          confidence: r.confidence ?? 70,
+        }));
+
+        setRecommendations(normalized);
       } else {
         throw new Error(data.error || 'Failed to get recommendations');
       }
     } catch (error) {
       console.error('Error fetching recommendations:', error);
-      // Fallback to mock data on error
-      const mockRecommendations = [
-        {
-          id: 1,
-          symbol: 'HRHO',
-          name: 'Heliopolis Housing',
-          entryPrice: 40.0,
-          targetPrice: 44.0,
-          stopLoss: 39.2,
-          expectedReturn: 10.0,
-          riskLevel: 'LOW',
-          confidence: 92,
-          reason: 'Steady uptrend, strong support'
-        },
-        {
-          id: 2,
-          symbol: 'EBANK',
-          name: 'Egyptian Bank',
-          entryPrice: 45.2,
-          targetPrice: 50.5,
-          stopLoss: 43.8,
-          expectedReturn: 11.7,
-          riskLevel: 'MEDIUM',
-          confidence: 85,
-          reason: 'Technical breakout, high volume'
-        }
-      ];
-      setRecommendations(mockRecommendations);
+      setRecommendations([]);
     } finally {
       setLoading(false);
     }
@@ -141,6 +127,15 @@ export default function SimpleRecommendations({ onAddStock, onViewDetails, onOpe
         <div className="py-12 text-center">
           <div className="animate-bounce text-6xl mb-4">⏳</div>
           <p className="text-gray-500 dark:text-gray-400 font-semibold">{t('loading')}</p>
+        </div>
+      ) : recommendations.length === 0 ? (
+        <div className="py-12 text-center space-y-3 px-4">
+          <p className="text-gray-600 dark:text-gray-400 font-semibold">
+            No recommendations available right now.
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-500">
+            Live market data may be temporarily unavailable. Try again in a few minutes.
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -181,7 +176,9 @@ export default function SimpleRecommendations({ onAddStock, onViewDetails, onOpe
                   </div>
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-600 dark:text-gray-300 font-bold">{t('stopLoss')}</span>
-                    <span className="font-black text-rose-600 dark:text-rose-400 text-lg">🛑 {rec.stopLoss} EGP</span>
+                    <span className="font-black text-rose-600 dark:text-rose-400 text-lg">
+                      🛑 {rec.stopLoss != null ? `${rec.stopLoss} EGP` : '—'}
+                    </span>
                   </div>
                 </div>
 
@@ -191,19 +188,21 @@ export default function SimpleRecommendations({ onAddStock, onViewDetails, onOpe
                   <div>
                     <p className="text-xs text-gray-600 dark:text-gray-300 font-bold uppercase tracking-wider">{t('expectedReturn')}</p>
                     <p className="font-black text-emerald-600 dark:text-emerald-400 text-2xl">
-                      +{rec.expectedReturn.toFixed(1)}%
+                      {typeof rec.expectedReturn === 'number' && rec.expectedReturn >= 0
+                        ? `+${rec.expectedReturn.toFixed(1)}%`
+                        : `${Number(rec.expectedReturn).toFixed(1)}%`}
                     </p>
                   </div>
                 </div>
 
                 {/* Confidence Score */}
+                {rec.confidence != null && (
                 <div className="mb-4 p-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 dark:from-purple-500/20 dark:to-pink-500/20 rounded-xl border border-purple-200/50 dark:border-purple-400/30">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-gray-600 dark:text-gray-300 font-bold uppercase tracking-wider">{t('confidence')}</p>
                       <p className="font-black text-purple-600 dark:text-purple-400 text-2xl">{rec.confidence}%</p>
                     </div>
-                    {/* Confidence bar */}
                     <div className="flex-1 mx-4 h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
@@ -212,6 +211,7 @@ export default function SimpleRecommendations({ onAddStock, onViewDetails, onOpe
                     </div>
                   </div>
                 </div>
+                )}
 
                 {/* Reason */}
                 <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg flex gap-2 border border-blue-200/50 dark:border-blue-400/30">

@@ -87,6 +87,27 @@ export async function POST(request) {
       const result = await createUser(newUser);
 
       if (result.success) {
+        // Initialize preset data for the new user
+        try {
+          const baseUrl = process.env.NEXT_PUBLIC_URL || process.env.VERCEL_URL 
+            ? `https://${process.env.VERCEL_URL}` 
+            : 'http://localhost:3000';
+          
+          const initResponse = await fetch(`${baseUrl}/api/init-preset`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: newUser.id })
+          });
+          
+          if (!initResponse.ok) {
+            console.warn("Warning: Failed to initialize preset data for user", newUser.id);
+            // Continue anyway - preset data initialization is not critical
+          }
+        } catch (presetError) {
+          console.warn("Warning: Could not initialize preset data:", presetError.message);
+          // Continue anyway - preset data initialization is not critical
+        }
+
         // Remove password from response
         const { password: _, ...userWithoutPassword } = newUser;
         return NextResponse.json({

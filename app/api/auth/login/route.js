@@ -6,6 +6,7 @@ export async function POST(request) {
   try {
     const { phone, password } = await request.json();
 
+    console.log("Login request:>>>>", { phone, password });
     // Validate input
     if (!phone || !password) {
       return NextResponse.json(
@@ -18,6 +19,7 @@ export async function POST(request) {
     let user;
     try {
       user = await getUserByPhone(phone);
+      console.log("[LOGIN] User lookup result:", { phone, found: !!user, userId: user?.id });
     } catch (kvError) {
       console.error("KV getUserByPhone error:", kvError);
       return NextResponse.json(
@@ -27,6 +29,7 @@ export async function POST(request) {
     }
 
     if (!user) {
+      console.log("[LOGIN] User not found for phone:", phone);
       return NextResponse.json(
         { error: "Invalid phone or password" },
         { status: 401 }
@@ -36,7 +39,9 @@ export async function POST(request) {
     // Check password using bcrypt
     let isPasswordValid;
     try {
+      console.log("[LOGIN] Comparing password for user:", user.id);
       isPasswordValid = await bcrypt.compare(password, user.password);
+      console.log("[LOGIN] Password valid:", isPasswordValid);
     } catch (bcryptError) {
       console.error("Bcrypt compare error:", bcryptError);
       return NextResponse.json(
@@ -46,6 +51,7 @@ export async function POST(request) {
     }
     
     if (!isPasswordValid) {
+      console.log("[LOGIN] Invalid password for user:", user.id);
       return NextResponse.json(
         { error: "Invalid phone or password" },
         { status: 401 }

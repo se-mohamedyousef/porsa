@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Moon, Sun, Globe, LogOut, Bell, Shield, Settings, Lock, Eye, EyeOff, Mail, Phone, Calendar, CheckCircle, AlertCircle, ChevronRight, Copy, Download } from 'lucide-react';
 import { useLanguageSimple } from '../hooks/useLanguageSimple';
 
-export default function SimpleProfile({ user, onLogout, language: langProp }) {
+export default function SimpleProfile({ user, userId, onLogout, language: langProp }) {
   const [loading, setLoading] = useState(false);
   const [activeSection, setActiveSection] = useState('account');
   const [showPassword, setShowPassword] = useState(false);
@@ -21,11 +21,33 @@ export default function SimpleProfile({ user, onLogout, language: langProp }) {
   const handleLogout = async () => {
     setLoading(true);
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      localStorage.removeItem('porsaCurrentUser');
+      const userId = user?.id;
+      if (userId) {
+        try {
+          const response = await fetch('/api/auth/logout', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId })
+          });
+          if (!response.ok) {
+            console.error('Logout API returned error:', response.status);
+          }
+        } catch (apiError) {
+          console.error('Logout API error:', apiError);
+          // Continue with local cleanup even if API fails
+        }
+      }
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('porsaCurrentUser');
+      }
       onLogout?.();
     } catch (error) {
       console.error('Logout error:', error);
+      // Still clear user data even if logout fails
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('porsaCurrentUser');
+      }
+      onLogout?.();
     } finally {
       setLoading(false);
     }

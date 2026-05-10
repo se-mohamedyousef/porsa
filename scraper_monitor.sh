@@ -1,83 +1,50 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Monitor live EGX API health (static egx_*.json files are deprecated).
+set -euo pipefail
+WORKSPACE="$(cd "$(dirname "$0")" && pwd)"
+BASE_URL="${BASE_URL:-http://localhost:3000}"
+LOG_FILE="${EGX_SCRAPER_LOG:-/tmp/egx_scraper.log}"
 
-# EGX Scraper Monitor
-# Usage: bash scraper_monitor.sh
-
-WORKSPACE="/Users/mohamedyoussef/Desktop/porsa"
-LOG_FILE="/tmp/egx_scraper.log"
-STOCKS_FILE="$WORKSPACE/egx_stocks_full.json"
-RECS_FILE="$WORKSPACE/egx_recommendations.json"
-
-echo "🇪🇬 EGX Scraper Monitoring Dashboard"
+echo "EGX live API check"
 echo "===================================================="
+echo "BASE_URL: $BASE_URL"
 echo ""
 
-# Check if cron is running
-echo "📅 Cron Job Status:"
-if crontab -l | grep -q "egx_stock_analyzer.py"; then
-    echo "✅ Cron job is ACTIVE (every 1 minute)"
-    crontab -l | grep egx_stock_analyzer.py
+echo "Cron / scheduler:"
+if crontab -l 2>/dev/null | grep -q "run_scraper.sh"; then
+  echo "Active entries:"
+  crontab -l 2>/dev/null | grep "run_scraper.sh" || true
 else
-    echo "❌ Cron job is NOT active"
+  echo "No crontab entries matching run_scraper.sh (optional)"
 fi
 echo ""
 
-# Last execution time
-echo "⏱️  Last Execution:"
-if [ -f "$LOG_FILE" ]; then
-    tail -1 "$LOG_FILE"
-    echo "Log location: $LOG_FILE"
+echo "Last log lines ($LOG_FILE):"
+if [[ -f "$LOG_FILE" ]]; then
+  tail -5 "$LOG_FILE"
 else
-    echo "No log file yet (waiting for first run)"
+  echo "(no log yet)"
 fi
 echo ""
 
-# Stocks data status
-echo "📊 Stocks Data Status:"
-if [ -f "$STOCKS_FILE" ]; then
-    count=$(jq '.count // (.stocks | length)' "$STOCKS_FILE" 2>/dev/null)
-    timestamp=$(jq -r '.timestamp' "$STOCKS_FILE" 2>/dev/null)
-    size=$(du -h "$STOCKS_FILE" | cut -f1)
-    echo "✅ File exists: $STOCKS_FILE"
-    echo "   Count: $count stocks"
-    echo "   Size: $size"
-    echo "   Updated: $timestamp"
+echo "GET /api/egx-stocks:"
+if curl -sfS "${BASE_URL}/api/egx-stocks" | head -c 120; then
+  echo ""
+  echo "… OK"
 else
-    echo "⏳ File not yet created"
+  echo "FAILED (is the app running at BASE_URL?)"
 fi
 echo ""
 
-# Recommendations data status
-echo "🎯 Recommendations Status:"
-if [ -f "$RECS_FILE" ]; then
-    buy_count=$(jq '.recommendations.short_term_buy | length' "$RECS_FILE" 2>/dev/null)
-    sell_count=$(jq '.recommendations.short_term_sell | length' "$RECS_FILE" 2>/dev/null)
-    size=$(du -h "$RECS_FILE" | cut -f1)
-    echo "✅ File exists: $RECS_FILE"
-    echo "   Buy recommendations: $buy_count"
-    echo "   Sell recommendations: $sell_count"
-    echo "   Size: $size"
+echo "GET /api/egx-recommendations:"
+if curl -sfS "${BASE_URL}/api/egx-recommendations" | head -c 120; then
+  echo ""
+  echo "… OK"
 else
-    echo "⏳ File not yet created"
+  echo "FAILED"
 fi
 echo ""
 
-# Recent log entries
-echo "📋 Recent Log Entries (last 5):"
-echo "---"
-if [ -f "$LOG_FILE" ]; then
-    tail -5 "$LOG_FILE"
-else
-    echo "No log entries yet"
-fi
-echo "---"
-echo ""
-
-# Instructions
-echo "📌 Commands:"
-echo "  View live log:     tail -f $LOG_FILE"
-echo "  Run manually:      python $WORKSPACE/egx_stock_analyzer.py"
-echo "  Stop cron:         crontab -r"
-echo "  Edit cron:         crontab -e"
-echo "  View stocks:       cat $STOCKS_FILE | jq '.stocks | length'"
-echo ""
+echo "Commands:"
+echo "  Warm caches:  BASE_URL=$BASE_URL bash $WORKSPACE/run_scraper.sh"
+echo "  Follow log:   tail -f $LOG_FILE"

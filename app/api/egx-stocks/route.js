@@ -1,106 +1,102 @@
 import { NextResponse } from "next/server";
-import { exec } from "child_process";
-import { promisify } from "util";
-import path from "path";
-import fs from "fs";
+import { scrapeEgxStocks } from "@/lib/scraper/egx";
+import { syncEgxUniverseToKv } from "@/lib/egx/stockKv";
+import { apiLogger } from "@/lib/logger";
+import { scraperCache } from "@/lib/scraper/cache";
 
-const execAsync = promisify(exec);
+export const maxDuration = 120;
 
-export async function GET(req) {
+function stripHistory(stocks) {
+  return stocks.map(({ history_90d: _h, ...rest }) => rest);
+}
+
+export async function GET(request) {
+  const startTime = Date.now();
+  let success = false;
+  let statusCode = 200;
+
   try {
-    const projectRoot = path.join(process.cwd());
-    const pythonScript = path.join(projectRoot, "egx_stock_analyzer.py");
-    const fullDataFile = path.join(projectRoot, "egx_stocks_full.json");
-    
-    // Check if Python script exists
-    if (!fs.existsSync(pythonScript)) {
-      return NextResponse.json(
-        { error: "Stock analyzer not configured" },
-        { status: 500 }
-      );
-    }
+    const { searchParams } = new URL(request.url);
+    const lite = searchParams.get("lite") === "1" || searchParams.get("lite") === "true";
+    const forceFresh = searchParams.get("fresh") === "1" || searchParams.get("fresh") === "true";
 
-    // Set environment variable for Groq API key
-    const env = {
-      ...process.env,
-      GROQ_API_KEY: process.env.GROQ_API_KEY,
-    };
+    apiLogger.debug("EGX stocks request", "GET", { lite, forceFresh });
 
-    // Run Python analyzer to fetch fresh stock data
-    const pythonPath = path.join(projectRoot, "venv/bin/python");
-    try {
-      await execAsync(
-        `${pythonPath} ${pythonScript}`,
-        { env, cwd: projectRoot, timeout: 60000 }
-      );
-    } catch (execError) {
-      // Python script may exit with error code even when saving error state successfully
-      // This is expected in error-first mode, so we continue to read the JSON file
-    }
+    const stocks = await scrapeEgxStocks({
+      log: (...args) => {
+        if (process.env.NODE_ENV !== "production") console.log(...args);
+      },
+      useCache: !forceFresh,
+      forceFresh,
+    });
 
-    // Read scraped results
-    if (fs.existsSync(fullDataFile)) {
-      const data = fs.readFileSync(fullDataFile, "utf-8");
-      const parsed = JSON.parse(data);
-      
-      // Check if scraper had an error
-      if (parsed.error) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: parsed.error,
-            message: "❌ Failed to fetch real EGX data",
-            stocks: [],
-            count: 0,
-            timestamp: parsed.timestamp,
-          },
-          { status: 503 }
-        );
-      }
-      
-      const stocks = parsed.stocks || [];
-      
-      // If no stocks fetched, return error
-      if (stocks.length === 0) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "No stocks retrieved from EGX",
-            message: "Scraper failed to fetch any real stock data. This could be due to network issues or EGX website changes.",
-            stocks: [],
-            count: 0,
-            timestamp: parsed.timestamp,
-          },
-          { status: 503 }
-        );
-      }
-      
-      return NextResponse.json({
+    // Sync to KV store asynchronously (don't block response)
+    syncEgxUniverseToKv(stocks).catch((err) => {
+      apiLogger.warn("Failed to sync stocks to KV", "syncEgxUniverseToKv", {
+        error: err.message,
+      });
+    });
+
+    const payload = lite ? stripHistory(stocks) : stocks;
+    success = true;
+
+    return NextResponse.json(
+      {
         success: true,
-        stocks: stocks,
-        count: stocks.length,
-        timestamp: parsed.timestamp || new Date().toISOString(),
+        stocks: payload,
+        count: payload.length,
+        timestamp: new Date().toISOString(),
+        lite,
+        cached: false,
+        executionTime: Date.now() - startTime,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    statusCode = 503;
+    apiLogger.error("EGX Stocks error", "GET", {
+      error: error.message,
+      stack: error.stack,
+    });
+
+    // Try to return cached data on error
+    try {
+      const cached = await scraperCache.getStocks(false);
+      if (cached.data) {
+        const lite = searchParams.get("lite") === "1" || searchParams.get("lite") === "true";
+        const payload = lite ? stripHistory(cached.data) : cached.data;
+
+        return NextResponse.json(
+          {
+            success: true,
+            stocks: payload,
+            count: payload.length,
+            timestamp: new Date().toISOString(),
+            lite,
+            cached: true,
+            cacheAge: cached.timestamp,
+            fallbackReason: error.message,
+            executionTime: Date.now() - startTime,
+          },
+          { status: 200 }
+        );
+      }
+    } catch (cacheErr) {
+      apiLogger.warn("Fallback cache also failed", "GET", {
+        error: cacheErr.message,
       });
     }
 
     return NextResponse.json(
-      { 
-        success: false,
-        error: "No stocks data file",
-        message: "Failed to generate stocks data from scraper.",
-      },
-      { status: 503 }
-    );
-  } catch (error) {
-    console.error("EGX Stocks error:", error);
-    return NextResponse.json(
       {
-        error: "Failed to fetch stocks",
-        details: error.message,
+        success: false,
+        error: error.message,
+        message: "Failed to fetch live EGX data and no cached data available",
         stocks: [],
         count: 0,
+        executionTime: Date.now() - startTime,
       },
-      { status: 500 }
+      { status: statusCode }
     );
   }
 }

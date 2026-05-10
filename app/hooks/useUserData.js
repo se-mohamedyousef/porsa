@@ -26,19 +26,35 @@ export function useUserData(userId) {
       }
       const data = await response.json();
       
+      // Validate response structure
+      if (!data) {
+        setPortfolio([]);
+        setAlerts([]);
+        setHistory([]);
+        return;
+      }
+      
       // Handle legacy (array) vs new (object) structure
       if (Array.isArray(data)) {
         setPortfolio(data);
         setAlerts([]);
         setHistory([]);
+      } else if (typeof data === 'object') {
+        setPortfolio(Array.isArray(data.stocks) ? data.stocks : []);
+        setAlerts(Array.isArray(data.alerts) ? data.alerts : []);
+        setHistory(Array.isArray(data.history) ? data.history : []);
       } else {
-        setPortfolio(data.stocks || []);
-        setAlerts(data.alerts || []);
-        setHistory(data.history || []);
+        setPortfolio([]);
+        setAlerts([]);
+        setHistory([]);
       }
     } catch (err) {
       console.error("Error loading portfolio:", err);
       setError(err.message);
+      // Set default empty values on error
+      setPortfolio([]);
+      setAlerts([]);
+      setHistory([]);
     } finally {
       setLoading(false);
     }
@@ -125,21 +141,16 @@ export function useUserData(userId) {
   
   // Update history logic - Call this when prices are refreshed (e.g. once a day effectively)
   // We will check if we already have an entry for today. If not, add it.
-  const trackHistory = useCallback(async (currentStocks) => {
+  const trackHistory = useCallback(async (currentStocks, currentAlerts, currentHistory) => {
       if (!currentStocks || currentStocks.length === 0) return;
       
       const totalValue = currentStocks.reduce((sum, s) => sum + (s.currentPrice * s.quantity), 0);
       const today = new Date().toISOString().split('T')[0];
       
-      // Check if we already have an entry for today
-      // We use the state 'history' here. 
-      // NOTE: 'history' might be stale in this closure if not careful, but since we pass it to savePortfolioData...
-      // Ideally we would use functional update but we need to save to DB.
+      // Use passed history instead of closure
+      const lastEntry = currentHistory.length > 0 ? currentHistory[currentHistory.length - 1] : null;
       
-      // Let's use the history from state. 
-      const lastEntry = history.length > 0 ? history[history.length - 1] : null;
-      
-      let newHistory = [...history];
+      let newHistory = [...currentHistory];
       if (lastEntry && lastEntry.date === today) {
           // Update today's entry (maybe the price changed during the day)
           newHistory[newHistory.length - 1] = { date: today, value: totalValue };
@@ -148,22 +159,23 @@ export function useUserData(userId) {
           newHistory.push({ date: today, value: totalValue });
       }
       
-      // Limit history to last 30 days to save space if needed, or keep it growing. 
-      // Let's keep last 90 days.
+      // Limit history to last 90 days to save space
       if (newHistory.length > 90) {
           newHistory = newHistory.slice(newHistory.length - 90);
       }
       
       setHistory(newHistory);
-      // We don't await this save to avoid blocking UI, or we can.
-      // We need to pass the current stocks and alerts too.
-      await savePortfolioData(currentStocks, alerts, newHistory);
-  }, [history, alerts, savePortfolioData]);
+      // Pass all current data to save function
+      await savePortfolioData(currentStocks, currentAlerts, newHistory);
+  }, [savePortfolioData]);
 
   // Update portfolio and save
   const updatePortfolio = useCallback(
     async (newPortfolio) => {
       setPortfolio(newPortfolio);
+      // Use functional update to ensure we have current state
+      setAlerts(currentAlerts => currentAlerts);
+      setHistory(currentHistory => currentHistory);
       await savePortfolioData(newPortfolio, alerts, history);
     },
     [savePortfolioData, alerts, history]
@@ -216,15 +228,14 @@ export function useUserData(userId) {
   const updateStockPrices = useCallback(
     async (updatedStocks) => {
       await updatePortfolio(updatedStocks);
-      // Also track history when prices update
-      // We wrap this so it doesn't fail the whole operation if history tracking fails
+      // Track history with current state values
       try {
-        await trackHistory(updatedStocks);
+        await trackHistory(updatedStocks, alerts, history);
       } catch (e) {
         console.error("Failed to track history", e);
       }
     },
-    [updatePortfolio, trackHistory]
+    [updatePortfolio, trackHistory, alerts, history]
   );
 
   // Load data on mount

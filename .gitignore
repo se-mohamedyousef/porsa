@@ -42,4 +42,9 @@ next-env.d.ts
 
 # data files
 /data/*.json
+.data
 .env*.local
+
+# legacy EGX snapshot dumps (live data: /api/egx-stocks, /api/egx-recommendations)
+/egx_recommendations.json
+/egx_stocks_full.json

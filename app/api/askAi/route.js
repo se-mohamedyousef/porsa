@@ -22,6 +22,8 @@ export async function POST(req) {
         model: "openai/gpt-oss-20b:fireworks-ai",
         messages: [{ role: "user", content: prompt }],
         stream: false,
+        max_tokens: 2048,
+        temperature: 0.6,
       }),
     });
 

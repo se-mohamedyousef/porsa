@@ -3,30 +3,31 @@ import { deleteSession } from "../../../../lib/kv";
 
 export async function POST(request) {
   try {
-    const { userId } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    const { userId } = body;
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: "User ID is required" },
-        { status: 400 }
-      );
+    // If userId is provided, delete the session
+    if (userId) {
+      try {
+        const result = await deleteSession(userId);
+        if (!result.success) {
+          console.warn("Warning: Failed to delete session in database", result.error);
+          // Don't fail logout even if session deletion fails
+        }
+      } catch (sessionError) {
+        console.error("Session deletion error:", sessionError);
+        // Don't fail logout even if session deletion fails
+      }
     }
 
-    const result = await deleteSession(userId);
-
-    if (result.success) {
-      return NextResponse.json({ success: true });
-    } else {
-      return NextResponse.json(
-        { error: result.error || "Failed to logout" },
-        { status: 500 }
-      );
-    }
+    // Always return success for logout - client-side localStorage is primary
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Logout error:", error);
+    // Still return success since logout is primarily client-side
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      { success: true },
+      { status: 200 }
     );
   }
 }

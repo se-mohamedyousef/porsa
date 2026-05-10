@@ -20,10 +20,18 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols, in
 
   const [selectedStock, setSelectedStock] = useState(getInitialStock());
   const [quantity, setQuantity] = useState("");
-  const [buyPrice, setBuyPrice] = useState(initialStock?.entryPrice ? initialStock.entryPrice.toFixed(2) : "");
+  const [buyPrice, setBuyPrice] = useState(
+    initialStock?.entryPrice != null
+      ? Number(initialStock.entryPrice).toFixed(2)
+      : initialStock?.currentPrice != null
+        ? Number(initialStock.currentPrice).toFixed(2)
+        : ""
+  );
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState("");
-  const [investmentType, setInvestmentType] = useState(initialStock?.expectedReturn > 10 ? "short-term" : "long-term");
+  const [investmentType, setInvestmentType] = useState(
+    initialStock && initialStock.expectedReturn && initialStock.expectedReturn > 10 ? "short-term" : "long-term"
+  );
   const [isAdding, setIsAdding] = useState(false);
   const [errors, setErrors] = useState({});
 

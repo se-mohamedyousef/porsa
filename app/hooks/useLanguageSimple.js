@@ -11,6 +11,10 @@ export function useLanguageSimple() {
   const { theme, toggleTheme: contextToggleTheme } = useTheme();
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      setMounted(true);
+      return;
+    }
     const savedLang = localStorage.getItem('porsaLanguage') || localStorage.getItem('language') || 'en';
     
     setLanguage(savedLang);
@@ -25,9 +29,11 @@ export function useLanguageSimple() {
   const changeLanguage = (lang) => {
     setLanguage(lang);
     setIsRTL(lang === 'ar');
-    localStorage.setItem('porsaLanguage', lang);
-    document.documentElement.lang = lang;
-    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('porsaLanguage', lang);
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    }
   };
 
   const toggleTheme = () => {

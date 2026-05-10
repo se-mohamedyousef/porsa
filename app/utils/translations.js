@@ -95,6 +95,14 @@ export const translations = {
 
     // EGX Market
     egxMarket: 'EGX Market',
+    liveMarket: 'Live Market',
+    liveMarketSubtitle: 'EGX movers — TradingView snapshot, enriched with Yahoo when available',
+    searchLiveStocks: 'Search symbol or company…',
+    symbolsCount: 'stocks',
+    connectionError: 'Could not load',
+    yahooEnriched: 'Live chart',
+    yahooSnapshot: 'Movers only',
+    liveMarketLoading: 'Loading market data…',
     marketRecommendations: 'AI-powered stock recommendations',
     buyRecommendations: 'Buy Recommendations',
     sellRecommendations: 'Sell Recommendations',
@@ -311,6 +319,14 @@ export const translations = {
 
     // EGX Market
     egxMarket: 'سوق البورصة المصرية',
+    liveMarket: 'السوق المباشر',
+    liveMarketSubtitle: 'مشاهدات البورصة — لقطة TradingView، مع تعزيز Yahoo عند توفرها',
+    searchLiveStocks: 'ابحث بالرمز أو الاسم…',
+    symbolsCount: 'سهم',
+    connectionError: 'تعذر التحميل',
+    yahooEnriched: 'رسم بياني',
+    yahooSnapshot: 'متحرك فقط',
+    liveMarketLoading: 'جاري تحميل السوق…',
     marketRecommendations: 'توصيات الأسهم بقوة الذكاء الاصطناعي',
     buyRecommendations: 'توصيات الشراء',
     sellRecommendations: 'توصيات البيع',

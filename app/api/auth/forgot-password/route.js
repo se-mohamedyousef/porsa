@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getUserByEmail } from "../../../../lib/kv";
-import { kv } from "@vercel/kv";
+import { redis as kv } from "@/lib/kv";
 import crypto from "crypto";
 import { Resend } from "resend";
 
@@ -51,17 +51,25 @@ export async function POST(request) {
       process.env.NEXT_PUBLIC_URL || "http://localhost:3000"
     }/reset-password?token=${resetToken}`;
 
-    // Initialize Resend
+    // Initialize Resend with proper error handling
+    if (!process.env.RESEND_API_KEY) {
+      console.error("RESEND_API_KEY is not set");
+      // Still return success to prevent email enumeration
+      return NextResponse.json({
+        success: true,
+        message: "If that email exists, a reset link has been sent",
+      });
+    }
+
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     // Send email using Resend
     try {
-      await resend.emails.send({
+      const emailResponse = await resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
         to: email,
         subject: "Reset Your Porsa Password",
         html: `
-          <!DOCTYPE html>
           <html>
             <head>
               <meta charset="utf-8">
@@ -137,12 +145,22 @@ Thanks,
 The Porsa Team
         `,
       });
+      
+      if (!emailResponse || emailResponse.error) {
+        console.error("Email sending failed:", emailResponse);
+        // Still return success to prevent email enumeration, but log the error
+        return NextResponse.json({
+          success: true,
+          message: "If that email exists, a reset link has been sent",
+        });
+      }
     } catch (emailError) {
       console.error("Email sending error:", emailError);
-      return NextResponse.json(
-        { error: "Failed to send reset email. Please try again later." },
-        { status: 500 }
-      );
+      // Still return success to prevent email enumeration
+      return NextResponse.json({
+        success: true,
+        message: "If that email exists, a reset link has been sent",
+      });
     }
 
     return NextResponse.json({
