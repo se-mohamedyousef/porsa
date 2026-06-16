@@ -193,16 +193,44 @@ export function useUserData(userId) {
   // Add stock to portfolio
   const addStock = useCallback(
     async (stockData) => {
+      // Create initial transaction
+      const initialTransaction = {
+        id: `txn-${Date.now()}`,
+        type: 'buy',
+        price: parseFloat(stockData.buyPrice) || 0,
+        quantity: parseFloat(stockData.quantity) || 0,
+        date: stockData.purchaseDate || new Date().toISOString().split('T')[0],
+        notes: stockData.notes || ''
+      };
+
+      // Fetch live price instead of defaulting to buyPrice
+      let livePrice = parseFloat(stockData.buyPrice) || 0;
+      try {
+        const priceRes = await fetch(`/api/stock-price?symbol=${encodeURIComponent(stockData.symbol)}`);
+        if (priceRes.ok) {
+          const priceData = await priceRes.json();
+          if (priceData.price != null && priceData.price > 0) {
+            livePrice = parseFloat(priceData.price);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to fetch live price for', stockData.symbol, '— using buyPrice as fallback');
+      }
+
       // Ensure all required fields are present
       const completeStock = {
         id: `${stockData.symbol}-${Date.now()}`, // Generate unique ID
         symbol: stockData.symbol,
         quantity: parseFloat(stockData.quantity) || 0,
         buyPrice: parseFloat(stockData.buyPrice) || 0,
-        currentPrice: parseFloat(stockData.buyPrice) || 0, // Initialize with buy price
+        currentPrice: parseFloat(Number(livePrice).toFixed(2)),
         purchaseDate: stockData.purchaseDate || new Date().toISOString().split('T')[0],
         notes: stockData.notes || '',
-        investmentType: stockData.investmentType || 'long-term', // Add investment type
+        investmentType: stockData.investmentType || 'long-term',
+        sector: stockData.sector || 'Unknown',
+        stopLoss: parseFloat(stockData.stopLoss) || 0,
+        targetPrice: parseFloat(stockData.targetPrice) || 0,
+        transactions: [initialTransaction],
       };
       
       // Calculate profit fields
@@ -238,6 +266,91 @@ export function useUserData(userId) {
     [updatePortfolio, trackHistory, alerts, history]
   );
 
+  // Add a transaction to an existing stock (buy more or sell)
+  const addTransaction = useCallback(
+    async (stockId, transaction) => {
+      const stock = portfolio.find(s => s.id === stockId);
+      if (!stock) return false;
+
+      const txn = {
+        id: `txn-${Date.now()}`,
+        type: transaction.type, // 'buy' or 'sell'
+        price: parseFloat(transaction.price) || 0,
+        quantity: parseFloat(transaction.quantity) || 0,
+        date: transaction.date || new Date().toISOString().split('T')[0],
+        notes: transaction.notes || ''
+      };
+
+      const transactions = [...(stock.transactions || []), txn];
+
+      // Recalculate average cost basis and total quantity from transactions
+      let totalBuyQty = 0, totalBuyCost = 0, totalSellQty = 0;
+      transactions.forEach(t => {
+        if (t.type === 'buy') {
+          totalBuyQty += t.quantity;
+          totalBuyCost += t.price * t.quantity;
+        } else {
+          totalSellQty += t.quantity;
+        }
+      });
+
+      const netQuantity = totalBuyQty - totalSellQty;
+      const avgCostBasis = totalBuyQty > 0 ? totalBuyCost / totalBuyQty : stock.buyPrice;
+
+      const updatedStock = {
+        ...stock,
+        transactions,
+        quantity: netQuantity,
+        buyPrice: Math.round(avgCostBasis * 100) / 100,
+        profit: (stock.currentPrice - avgCostBasis) * netQuantity,
+        profitPercent: avgCostBasis > 0 ? ((stock.currentPrice - avgCostBasis) / avgCostBasis) * 100 : 0
+      };
+
+      // Remove stock if fully sold
+      let newPortfolio;
+      if (netQuantity <= 0) {
+        newPortfolio = portfolio.filter(s => s.id !== stockId);
+      } else {
+        newPortfolio = portfolio.map(s => s.id === stockId ? updatedStock : s);
+      }
+
+      await updatePortfolio(newPortfolio);
+      return true;
+    },
+    [portfolio, updatePortfolio]
+  );
+
+  // Get transaction history for a stock or all stocks
+  const getTransactionHistory = useCallback(
+    (stockId = null) => {
+      if (stockId) {
+        const stock = portfolio.find(s => s.id === stockId);
+        return stock?.transactions || [];
+      }
+      // All transactions across all stocks
+      return portfolio.flatMap(s => 
+        (s.transactions || []).map(t => ({ ...t, symbol: s.symbol, stockId: s.id }))
+      ).sort((a, b) => new Date(b.date) - new Date(a.date));
+    },
+    [portfolio]
+  );
+
+  // Update stop-loss and target price for a stock
+  const updateStockTargets = useCallback(
+    async (stockId, { stopLoss, targetPrice }) => {
+      const newPortfolio = portfolio.map(s => {
+        if (s.id !== stockId) return s;
+        return {
+          ...s,
+          stopLoss: stopLoss !== undefined ? parseFloat(stopLoss) : s.stopLoss,
+          targetPrice: targetPrice !== undefined ? parseFloat(targetPrice) : s.targetPrice
+        };
+      });
+      await updatePortfolio(newPortfolio);
+    },
+    [portfolio, updatePortfolio]
+  );
+
   // Load data on mount
   useEffect(() => {
     if (userId) {
@@ -258,6 +371,9 @@ export function useUserData(userId) {
     refreshPortfolio: loadPortfolio,
     alerts,
     history,
+    addTransaction,
+    getTransactionHistory,
+    updateStockTargets,
     addAlert: async (alert) => {
       const newAlerts = [...alerts, alert];
       await updateAlerts(newAlerts);

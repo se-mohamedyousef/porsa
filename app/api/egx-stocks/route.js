@@ -3,6 +3,7 @@ import { scrapeEgxStocks } from "@/lib/scraper/egx";
 import { syncEgxUniverseToKv } from "@/lib/egx/stockKv";
 import { apiLogger } from "@/lib/logger";
 import { scraperCache } from "@/lib/scraper/cache";
+import { warmIndexCache } from "@/lib/egx/indices";
 
 export const maxDuration = 120;
 
@@ -36,6 +37,9 @@ export async function GET(request) {
         error: err.message,
       });
     });
+
+    // Warm index cache in background
+    warmIndexCache().catch(() => {});
 
     const payload = lite ? stripHistory(stocks) : stocks;
     success = true;

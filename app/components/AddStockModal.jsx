@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AlertCircle, TrendingUp, Calendar, FileText, CheckCircle, X } from "lucide-react";
 import StockSearch from "./StockSearch";
+import { useLanguageSimple } from '../hooks/useLanguageSimple';
 
 export default function AddStockModal({ onClose, onAddStock, existingSymbols, initialStock }) {
   // Initialize selectedStock - if initialStock is a recommendation, add currentPrice
@@ -34,11 +35,12 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols, in
   );
   const [isAdding, setIsAdding] = useState(false);
   const [errors, setErrors] = useState({});
+  const { t, isRTL } = useLanguageSimple();
 
   const handleStockSelect = (stock) => {
     if (stock.isDuplicate) {
       const confirmed = confirm(
-        `${stock.symbol} is already in your portfolio. Add more shares?`
+        `${stock.symbol} ${t('alreadyInPortfolio')}`
       );
       if (!confirmed) return;
     }
@@ -51,10 +53,10 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols, in
   const validateForm = () => {
     const newErrors = {};
     
-    if (!selectedStock) newErrors.stock = "Please select a stock";
-    if (!quantity || parseFloat(quantity) <= 0) newErrors.quantity = "Quantity must be greater than 0";
-    if (!buyPrice || parseFloat(buyPrice) <= 0) newErrors.buyPrice = "Buy price must be greater than 0";
-    if (!purchaseDate) newErrors.purchaseDate = "Purchase date is required";
+    if (!selectedStock) newErrors.stock = t('pleaseSelectStock');
+    if (!quantity || parseFloat(quantity) <= 0) newErrors.quantity = t('quantityGtZero');
+    if (!buyPrice || parseFloat(buyPrice) <= 0) newErrors.buyPrice = t('priceGtZero');
+    if (!purchaseDate) newErrors.purchaseDate = t('dateRequired');
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -116,10 +118,10 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols, in
           <div>
             <h2 className="text-3xl font-black text-white flex items-center gap-3">
               <TrendingUp size={32} className="text-yellow-300" />
-              Add Stock
+              {t('addStockTitle')}
             </h2>
             <p className="text-sm text-white/80 font-semibold mt-1">
-              Add Egyptian stocks to your portfolio
+              {t('addEgyptianStocks')}
             </p>
           </div>
           <button
@@ -136,7 +138,7 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols, in
           {/* Stock Search Section */}
           <div className="space-y-3">
             <label className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-              <span className="text-blue-600">🔍</span> Select Stock
+              <span className="text-blue-600">🔍</span> {t('selectStock')}
             </label>
             <StockSearch
               onSelectStock={handleStockSelect}
@@ -174,7 +176,7 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols, in
                     {selectedStock.currentPrice?.toFixed(2)} EGP
                   </p>
                   <p className="text-xs font-bold text-gray-600 dark:text-gray-400">
-                    Current Price
+                    {t('currentPrice')}
                   </p>
                 </div>
               </div>
@@ -188,7 +190,7 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols, in
               {/* Quantity Section */}
               <div className="space-y-3">
                 <label className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">
-                  📊 Number of Shares
+                  📊 {t('numberOfShares')}
                 </label>
                 <input
                   type="number"
@@ -199,7 +201,7 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols, in
                     setQuantity(e.target.value);
                     if (e.target.value) setErrors({ ...errors, quantity: undefined });
                   }}
-                  placeholder="Enter number of shares"
+                  placeholder={t('enterShares')}
                   className={`w-full px-4 py-3 rounded-xl font-bold text-lg bg-white dark:bg-slate-800 border-2 transition-all ${
                     errors.quantity 
                       ? 'border-red-500 dark:border-red-600' 
@@ -232,7 +234,7 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols, in
               {/* Buy Price Section */}
               <div className="space-y-3">
                 <label className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">
-                  💰 Purchase Price (EGP)
+                  💰 {t('purchasePrice')}
                 </label>
                 <input
                   type="number"
@@ -243,7 +245,7 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols, in
                     setBuyPrice(e.target.value);
                     if (e.target.value) setErrors({ ...errors, buyPrice: undefined });
                   }}
-                  placeholder="Enter purchase price"
+                  placeholder={t('enterPurchasePrice')}
                   className={`w-full px-4 py-3 rounded-xl font-bold text-lg bg-white dark:bg-slate-800 border-2 transition-all ${
                     errors.buyPrice 
                       ? 'border-red-500 dark:border-red-600' 
@@ -256,14 +258,14 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols, in
                   </p>
                 )}
                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                  💡 Current market price: {selectedStock.currentPrice?.toFixed(2)} EGP
+                  💡 {t('currentMarketPriceHint')}: {selectedStock.currentPrice?.toFixed(2)} EGP
                 </p>
               </div>
 
               {/* Purchase Date Section */}
               <div className="space-y-3">
                 <label className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                  <Calendar size={16} /> Purchase Date
+                  <Calendar size={16} /> {t('purchaseDate')}
                 </label>
                 <input
                   type="date"
@@ -288,7 +290,7 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols, in
               {/* Investment Type Section */}
               <div className="space-y-3">
                 <label className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                  🎯 Investment Type
+                  🎯 {t('investmentType')}
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <button
@@ -300,7 +302,7 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols, in
                         : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'
                     }`}
                   >
-                    📅 Long-term (1+ years)
+                    📅 {t('longTermLabel')}
                   </button>
                   <button
                     type="button"
@@ -311,7 +313,7 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols, in
                         : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700'
                     }`}
                   >
-                    ⚡ Short-term (under 1 year)
+                    ⚡ {t('shortTermLabel')}
                   </button>
                 </div>
               </div>
@@ -319,12 +321,12 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols, in
               {/* Notes Section */}
               <div className="space-y-3">
                 <label className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                  <FileText size={16} /> Notes (Optional)
+                  <FileText size={16} /> {t('notesOptional')}
                 </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Add notes about this purchase (e.g., 'Investment for long-term growth')"
+                  placeholder={t('notesPlaceholder')}
                   rows="3"
                   className="w-full px-4 py-3 rounded-xl font-semibold bg-white dark:bg-slate-800 border-2 border-gray-300 dark:border-slate-600 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-none transition-all resize-none"
                 />
@@ -335,23 +337,23 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols, in
                 <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-2xl p-5 border-2 border-emerald-200 dark:border-emerald-800">
                   <h3 className="font-black text-gray-900 dark:text-white text-sm uppercase tracking-wider flex items-center gap-2 mb-4">
                     <CheckCircle size={18} className="text-emerald-600" />
-                    📊 Investment Summary
+                    📊 {t('investmentSummary')}
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-white/60 dark:bg-slate-800/60 rounded-xl p-3">
-                      <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold">Total Investment</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold">{t('totalInvestment')}</p>
                       <p className="text-xl font-black text-gray-900 dark:text-white">
                         {(parseFloat(quantity || 0) * parseFloat(buyPrice || 0)).toLocaleString('en-US', {maximumFractionDigits: 2})} EGP
                       </p>
                     </div>
                     <div className="bg-white/60 dark:bg-slate-800/60 rounded-xl p-3">
-                      <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold">Current Value</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold">{t('currentValue')}</p>
                       <p className="text-xl font-black text-gray-900 dark:text-white">
                         {(parseFloat(quantity || 0) * parseFloat(selectedStock.currentPrice || 0)).toLocaleString('en-US', {maximumFractionDigits: 2})} EGP
                       </p>
                     </div>
                     <div className="col-span-2 bg-white/60 dark:bg-slate-800/60 rounded-xl p-3 border-2 border-emerald-200 dark:border-emerald-800">
-                      <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold">Potential Profit/Loss</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold">{t('potentialPL')}</p>
                       <div className="flex items-center justify-between mt-1">
                         <p className={`text-lg font-black ${
                           (parseFloat(quantity || 0) * parseFloat(selectedStock.currentPrice || 0)) - 
@@ -395,7 +397,7 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols, in
             onClick={onClose}
             className="flex-1 px-6 py-3 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-900 dark:text-white rounded-xl font-black text-lg transition-all transform hover:scale-105 active:scale-95"
           >
-            Cancel
+            {t('cancel')}
           </button>
           <button
             onClick={handleAddStock}
@@ -403,7 +405,7 @@ export default function AddStockModal({ onClose, onAddStock, existingSymbols, in
             className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-black text-lg transition-all transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl disabled:hover:scale-100 flex items-center justify-center gap-2"
           >
             <CheckCircle size={20} />
-            {isAdding ? "Adding Stock..." : "Add to Portfolio"}
+            {isAdding ? t('addingStock') : t('addToPortfolioBtn')}
           </button>
         </div>
       </div>

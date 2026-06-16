@@ -1,0 +1,206 @@
+.dashboard {
+  background: white;
+  padding: 28px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+  border: 1px solid #f0f0f0;
+}
+
+.dashboard h3 {
+  margin: 0 0 24px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.agentGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.agentCard {
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.agentCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.agentCard:hover {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #f0f4ff 0%, #f9fafb 100%);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+  transform: translateY(-2px);
+}
+
+.agentCard:hover::before {
+  left: 100%;
+}
+
+.agentCard.expanded {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, #ffffff 0%, #f5f7ff 100%);
+  border-color: #667eea;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+.icon {
+  font-size: 24px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05));
+}
+
+.header h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  align-items: center;
+}
+
+.metric .label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.metric .value {
+  color: #1f2937;
+  font-weight: 600;
+  background: rgba(102, 126, 234, 0.08);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.confidence {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.bar {
+  flex: 1;
+  height: 8px;
+  background: linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 100%);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.fill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.details {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 2px solid #f0f0f0;
+  position: relative;
+  z-index: 1;
+}
+
+.summary {
+  margin: 0 0 14px 0;
+  font-size: 14px;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+.section {
+  margin-bottom: 14px;
+}
+
+.section h5 {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #667eea;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.section ul {
+  margin: 0;
+  padding-left: 18px;
+  list-style: none;
+}
+
+.section li {
+  font-size: 13px;
+  color: #374151;
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+.arrow {
+  text-align: center;
+  font-size: 13px;
+  color: #d1d5db;
+  margin-top: 10px;
+  position: relative;
+  z-index: 1;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .dashboard {
+    padding: 20px;
+  }
+
+  .agentGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .agentCard.expanded {
+    grid-column: 1;
+  }
+
+  .metric .value {
+    font-size: 12px;
+  }
+}
+

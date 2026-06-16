@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useLanguageSimple } from '../hooks/useLanguageSimple';
 
 export default function StockSearch({ onSelectStock, existingSymbols = [] }) {
   const [query, setQuery] = useState("");
@@ -10,6 +11,7 @@ export default function StockSearch({ onSelectStock, existingSymbols = [] }) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const searchRef = useRef(null);
+  const { t } = useLanguageSimple();
 
   // Fetch all EGX stocks on mount
   useEffect(() => {
@@ -121,7 +123,7 @@ export default function StockSearch({ onSelectStock, existingSymbols = [] }) {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => query && setShowDropdown(true)}
-          placeholder="Search by symbol or company name..."
+          placeholder={t('searchPlaceholder')}
           className="input-enhanced w-full pl-10 pr-4 transition-all duration-200"
           autoComplete="off"
         />

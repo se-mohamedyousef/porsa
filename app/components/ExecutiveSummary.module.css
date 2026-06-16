@@ -1,0 +1,60 @@
+.summary {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.summary h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  color: #1f2937;
+}
+
+.thesis {
+  background: #f9fafb;
+  padding: 12px;
+  border-left: 3px solid #3b82f6;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.thesis p {
+  margin: 0;
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.outlooks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.outlook {
+  background: #f3f4f6;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.outlook h4 {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.outlook p {
+  margin: 0;
+  font-size: 14px;
+  color: #1f2937;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .outlooks {
+    grid-template-columns: 1fr;
+  }
+}

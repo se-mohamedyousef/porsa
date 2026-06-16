@@ -11,6 +11,7 @@ import {
   Activity,
 } from "lucide-react";
 import { useLanguageSimple } from "../hooks/useLanguageSimple";
+import { matchesIndexFilter, INDEX_FILTERS } from "@/lib/egx/indices";
 import LoadingSpinner from "./LoadingSpinner";
 
 function formatVol(v) {
@@ -42,6 +43,7 @@ export default function LiveMarketTab({ onViewStock, onAddFromMarket }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [query, setQuery] = useState("");
+  const [indexFilter, setIndexFilter] = useState("ALL");
   const [updatedAt, setUpdatedAt] = useState(null);
 
   const load = useCallback(async () => {
@@ -69,13 +71,21 @@ export default function LiveMarketTab({ onViewStock, onAddFromMarket }) {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter(
-      (s) =>
-        s.symbol?.toLowerCase().includes(q) ||
-        (s.name && String(s.name).toLowerCase().includes(q))
-    );
-  }, [items, query]);
+    let result = items;
+    // Index filter
+    if (indexFilter !== 'ALL') {
+      result = result.filter((s) => matchesIndexFilter(s.symbol, indexFilter));
+    }
+    // Text search
+    if (q) {
+      result = result.filter(
+        (s) =>
+          s.symbol?.toLowerCase().includes(q) ||
+          (s.name && String(s.name).toLowerCase().includes(q))
+      );
+    }
+    return result;
+  }, [items, query, indexFilter]);
 
   const sorted = useMemo(
     () => [...filtered].sort((a, b) => (b.change ?? 0) - (a.change ?? 0)),
@@ -130,6 +140,23 @@ export default function LiveMarketTab({ onViewStock, onAddFromMarket }) {
           placeholder={t("searchLiveStocks")}
           className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm font-semibold placeholder:text-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
         />
+      </div>
+
+      {/* Index Filter */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1">
+        {INDEX_FILTERS.map((f) => (
+          <button
+            key={f.id}
+            onClick={() => setIndexFilter(f.id)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+              indexFilter === f.id
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-600'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
       </div>
 
       <p className="text-xs font-bold text-gray-500 dark:text-gray-400">

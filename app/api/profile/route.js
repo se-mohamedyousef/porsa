@@ -52,6 +52,43 @@ export async function POST(request) {
       );
     }
 
+    // Handle updating price alerts
+    if (action === 'update_alerts' && Array.isArray(body.alerts)) {
+      try {
+        const currentUser = await getUser(userId);
+        if (!currentUser) {
+          return NextResponse.json(
+            { error: "User not found" },
+            { status: 404 }
+          );
+        }
+
+        const updatedUser = await updateUser(userId, {
+          ...currentUser,
+          alerts: body.alerts
+        });
+
+        if (updatedUser.success) {
+          return NextResponse.json({ 
+            success: true, 
+            message: 'Alerts updated',
+            alerts: body.alerts
+          });
+        } else {
+          return NextResponse.json(
+            { error: 'Failed to update alerts' },
+            { status: 500 }
+          );
+        }
+      } catch (error) {
+        console.error('Error updating alerts:', error);
+        return NextResponse.json(
+          { error: 'Failed to update alerts' },
+          { status: 500 }
+        );
+      }
+    }
+
     // Handle adding price alert
     if (action === 'add_alert' && alert) {
       try {

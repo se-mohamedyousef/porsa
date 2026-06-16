@@ -1,0 +1,121 @@
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.bannerSkeleton {
+  min-height: 120px;
+}
+
+.summarySkeleton {
+  min-height: 140px;
+}
+
+.casesSkeleton {
+  display: flex;
+  gap: 16px;
+  min-height: 120px;
+}
+
+.agentsSkeleton {
+  min-height: 280px;
+}
+
+.skeletonLine {
+  background: linear-gradient(
+    90deg,
+    #f3f4f6 25%,
+    #e5e7eb 50%,
+    #f3f4f6 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  height: 16px;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.agentGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.skeletonCard {
+  background: #f9fafb;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.loadingMessage {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.loadingMessage p {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  color: #1f2937;
+}
+
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+
+.dots span {
+  font-size: 24px;
+  color: #3b82f6;
+  animation: bounce 1.4s infinite;
+}
+
+.dots span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .section {
+    padding: 16px;
+  }
+
+  .agentGrid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+}

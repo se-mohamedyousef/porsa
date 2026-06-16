@@ -314,34 +314,35 @@ Format as JSON: {verdict: "Buy|Hold|Sell", reasoning: "brief", technicalAnalysis
               </div>
             )}
             
-            {/* Key Metrics - Compact Grid */}
+            {/* Key Metrics - Clear & Simple Grid */}
             {companyInfo && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                <MetricCard label="Current" value={`${companyInfo.lastPrice} EGP`} icon="📊" />
-                <MetricCard label="52W High" value={`${companyInfo.yearHigh}`} icon="⬆️" />
-                <MetricCard label="52W Low" value={`${companyInfo.yearLow}`} icon="⬇️" />
-                <MetricCard label="RSI(14)" value={companyInfo.rsi} icon="📈" />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <MetricCard label="Current Price" value={`${companyInfo.lastPrice}`} unit="EGP" icon="💹" />
+                <MetricCard label="52W High" value={`${companyInfo.yearHigh}`} unit="EGP" icon="⬆️" />
+                <MetricCard label="52W Low" value={`${companyInfo.yearLow}`} unit="EGP" icon="⬇️" />
+                <MetricCard label="RSI(14)" value={companyInfo.rsi} unit="" icon="📊" />
               </div>
             )}
 
-            {/* Chart Section */}
-            <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800/30 dark:to-gray-900/50 rounded-2xl border border-gray-200 dark:border-white/10 p-3 sm:p-4 shadow-lg">
-              <div className="flex justify-between items-center mb-3">
+            {/* Chart Section - Simplified & Clear */}
+            <div className="bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-white/10 p-4 sm:p-5 shadow-lg">
+              {/* Header with Timeframe Buttons */}
+              <div className="flex justify-between items-baseline gap-4 mb-4">
                 <div>
-                  <h3 className="text-sm sm:text-lg font-black text-gray-900 dark:text-white">Price Chart</h3>
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Price Chart</h3>
                   {!quote?.bars?.length && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Estimated trend based on current price</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Estimated based on current price</p>
                   )}
                 </div>
-                <div className="flex gap-1 sm:gap-2">
+                <div className="flex gap-1 sm:gap-2 flex-shrink-0">
                   {['1D', '1W', '1M', '1Y'].map(tf => (
                     <button
                       key={tf}
                       onClick={() => setActiveTimeframe(tf)}
-                      className={`px-2 sm:px-4 py-1 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+                      className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 ${
                         activeTimeframe === tf
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-gray-300'
+                          ? 'bg-emerald-600 text-white shadow-md'
+                          : 'bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10'
                       }`}
                     >
                       {tf}
@@ -350,65 +351,88 @@ Format as JSON: {verdict: "Buy|Hold|Sell", reasoning: "brief", technicalAnalysis
                 </div>
               </div>
 
-              <div className="h-48 sm:h-80 w-full">
+              {/* Chart Container */}
+              <div className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-800/30 dark:to-gray-900/20 rounded-xl p-2 sm:p-3 h-56 sm:h-72 w-full border border-gray-100 dark:border-white/5">
                 {chartLoading ? (
-                  <div className="h-full flex items-center justify-center text-gray-500 text-sm">
-                    Loading chart...
+                  <div className="h-full flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="inline-block w-6 h-6 border-2 border-emerald-300 border-t-emerald-600 rounded-full animate-spin mb-2"></div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Loading chart...</p>
+                    </div>
                   </div>
                 ) : chartData.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-gray-500 text-sm text-center px-4">
-                    Unable to load chart data
+                  <div className="h-full flex items-center justify-center">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">No chart data available</p>
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>
+                    <AreaChart data={chartData} margin={{ top: 4, right: 12, left: -8, bottom: 0 }}>
                       <defs>
-                        <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                        <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.25}/>
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0.02}/>
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" opacity={0.05} />
-                      <XAxis dataKey="date" stroke="currentColor" opacity={0.5} style={{fontSize: '11px'}} tick={{fontSize: 11}} />
-                      <YAxis stroke="currentColor" opacity={0.5} style={{fontSize: '11px'}} tick={{fontSize: 11}} width={40} />
+                      <CartesianGrid strokeDasharray="0" vertical={false} stroke="#e5e7eb" opacity={0.3} strokeWidth={0.5} />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="#9ca3af"
+                        opacity={0.6} 
+                        style={{fontSize: '12px'}}
+                        tick={{fill: '#6b7280', fontSize: 12, fontWeight: 500}}
+                        tickLine={false}
+                      />
+                      <YAxis 
+                        stroke="#9ca3af"
+                        opacity={0.6}
+                        style={{fontSize: '12px'}}
+                        tick={{fill: '#6b7280', fontSize: 12, fontWeight: 500}}
+                        tickLine={false}
+                        width={45}
+                      />
                       <Tooltip 
                         contentStyle={{ 
-                          borderRadius: '12px', 
-                          border: 'none',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                          background: '#fff',
-                          padding: '8px 12px',
+                          borderRadius: '10px', 
+                          border: '1px solid #e5e7eb',
+                          boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                          background: '#ffffff',
+                          padding: '10px 14px',
                         }}
-                        itemStyle={{ fontWeight: 'bold', fontSize: '12px' }}
-                        formatter={(value) => [`${formatPrice(value)} EGP`, 'Price']}
+                        labelStyle={{ color: '#1f2937', fontWeight: 600, marginBottom: 4, fontSize: 13 }}
+                        itemStyle={{ color: '#059669', fontWeight: 600, fontSize: 13 }}
+                        formatter={(value) => [`${formatPrice(value)} EGP`, '💹 Price']}
+                        labelFormatter={(label) => `Date: ${label}`}
                       />
                       <Area 
                         type="monotone" 
                         dataKey="price" 
                         stroke="#10b981"
-                        strokeWidth={2} 
+                        strokeWidth={2.5}
                         fillOpacity={1} 
-                        fill="url(#colorPrice)" 
+                        fill="url(#chartGradient)" 
+                        dot={false}
+                        isAnimationActive={false}
                       />
                     </AreaChart>
                   </ResponsiveContainer>
                 )}
               </div>
 
+              {/* Chart Stats - Clean & Organized */}
               {chartData.length > 0 && (
-                <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-white/10 text-xs sm:text-sm">
-                  <div>
-                    <p className="text-gray-600 dark:text-gray-400 font-bold mb-1">High</p>
-                    <p className="text-green-600 dark:text-green-400 font-black">{periodHigh?.toFixed(2)}</p>
+                <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-white/10">
+                  <div className="text-center">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold mb-1">High</p>
+                    <p className="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400">{periodHigh?.toFixed(2)} EGP</p>
                   </div>
-                  <div>
-                    <p className="text-gray-600 dark:text-gray-400 font-bold mb-1">Low</p>
-                    <p className="text-red-600 dark:text-red-400 font-black">{periodLow?.toFixed(2)}</p>
+                  <div className="text-center border-l border-r border-gray-100 dark:border-white/10">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold mb-1">Low</p>
+                    <p className="text-sm sm:text-base font-bold text-gray-600 dark:text-gray-300">{periodLow?.toFixed(2)} EGP</p>
                   </div>
-                  <div>
-                    <p className="text-gray-600 dark:text-gray-400 font-bold mb-1">Change</p>
-                    <p className={`font-black ${priceMovement >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                      {priceMovement >= 0 ? '+' : ''}{priceMovement?.toFixed(2)}%
+                  <div className="text-center">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold mb-1">Period Change</p>
+                    <p className={`text-sm sm:text-base font-bold ${priceMovement >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                      {priceMovement >= 0 ? '📈' : '📉'} {priceMovement >= 0 ? '+' : ''}{priceMovement?.toFixed(2)}%
                     </p>
                   </div>
                 </div>
@@ -530,27 +554,31 @@ Format as JSON: {verdict: "Buy|Hold|Sell", reasoning: "brief", technicalAnalysis
 }
 
 // Reusable Components
-function MetricCard({ label, value, icon }) {
+function MetricCard({ label, value, unit, icon }) {
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/40 dark:to-gray-700/30 p-2 sm:p-3 rounded-lg border border-gray-200 dark:border-white/10">
-      <p className="text-[9px] sm:text-[10px] font-bold text-gray-600 dark:text-gray-400 mb-1 truncate">{label}</p>
-      <p className="text-sm sm:text-base font-black text-gray-900 dark:text-white">{icon} {value}</p>
+    <div className="bg-white dark:bg-gray-800/50 p-3 sm:p-4 rounded-xl border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 transition-colors">
+      <p className="text-xs sm:text-[11px] font-semibold text-gray-600 dark:text-gray-400 mb-1.5 truncate">{label}</p>
+      <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white flex items-baseline gap-1">
+        <span>{icon}</span>
+        <span>{value}</span>
+      </p>
+      {unit && <p className="text-[9px] text-gray-500 dark:text-gray-500 mt-0.5">{unit}</p>}
     </div>
   );
 }
 
 function StatCard({ label, value, unit, color = 'gray' }) {
   const colorMap = {
-    green: 'text-green-600 dark:text-green-400',
+    green: 'text-emerald-600 dark:text-emerald-400',
     red: 'text-red-600 dark:text-red-400',
     gray: 'text-gray-600 dark:text-gray-400',
   };
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/40 dark:to-gray-700/30 p-3 rounded-lg border border-gray-200 dark:border-white/10">
-      <p className="text-[10px] font-bold text-gray-600 dark:text-gray-400 mb-1">{label}</p>
-      <p className={`text-lg sm:text-xl font-black ${colorMap[color]}`}>{value}</p>
-      <p className="text-[9px] text-gray-500 dark:text-gray-500 mt-1">{unit}</p>
+    <div className="bg-white dark:bg-gray-800/50 p-3 sm:p-4 rounded-xl border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 transition-colors">
+      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1.5">{label}</p>
+      <p className={`text-lg sm:text-xl font-bold ${colorMap[color]}`}>{value}</p>
+      <p className="text-[9px] text-gray-500 dark:text-gray-500 mt-0.5">{unit}</p>
     </div>
   );
 }
